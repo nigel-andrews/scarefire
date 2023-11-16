@@ -1,6 +1,7 @@
 #include <GL/glew.h>
 
 #include <GL/freeglut.h>
+#include <GL/glu.h>
 #include <fstream>
 #include <iostream>
 #include <optional>
@@ -27,8 +28,9 @@ GLuint hair_program_id;
 GLuint surface_program_id;
 
 bool held = false;
-GLfloat offset[2] = {0, 0};
+GLfloat offset[3] = {0, 0, -17};
 GLint pos[2] = {0, 0};
+bool shift = false;
 
 GLfloat model_view_matrix[16] = {
     0.577350, -0.3333, 0.57735, 0.00000, //
@@ -40,7 +42,7 @@ GLfloat projection_matrix[16] = {
     15.0000, 0.00000, 0.00000, 0.00000, //
     0.00000, 15.0000, 0.00000, 0.00000, //
     0.00000, 0.00000, -1.0002, -1.0000, //
-    0.00000, 0.00000, -10.001, 0.00000, //
+    0.00000, 0.00000, -5.001,  0.00000, //
 };
 
 void use_shader(GLuint shader_id) {
@@ -71,10 +73,9 @@ void window_resize(int width, int height) {
 }
 
 void display() {
-  // GLuint offset_id = glGetUniformLocation(program_id, "pan");
-  // glUniform2fv(offset_id, 1, offset);
-  model_view_matrix[12] = offset[0];
-  model_view_matrix[13] = offset[1];
+  model_view_matrix[4 * 3] = offset[0];
+  model_view_matrix[4 * 3 + 1] = offset[1];
+  model_view_matrix[4 * 3 + 2] = offset[2];
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   TEST_OPENGL_ERROR();
@@ -95,10 +96,10 @@ void mouse_button_handler(int button, int state, int x, int y) {
     pos[0] = x;
     pos[1] = y;
   } else {
-    pos[0] = 0;
-    pos[1] = 0;
     held = false;
   }
+
+  shift = glutGetModifiers() & GLUT_ACTIVE_SHIFT;
 }
 
 void mouse_motion_handler(int x, int y) {
@@ -108,8 +109,12 @@ void mouse_motion_handler(int x, int y) {
     held = true;
   }
 
-  offset[0] -= (pos[0] - x) / 1000.;
-  offset[1] += (pos[1] - y) / 1000.;
+  if (!shift) {
+    offset[0] -= (pos[0] - x) / 1000.;
+    offset[1] += (pos[1] - y) / 1000.;
+  } else {
+    offset[2] += (pos[1] - y) / 100.;
+  }
 
   pos[0] = x;
   pos[1] = y;
