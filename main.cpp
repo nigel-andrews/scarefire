@@ -16,6 +16,22 @@
 
 GLuint bunny_vao_id;
 GLuint program_id;
+// bool m1 = false;
+bool held = false;
+GLfloat offset[2] = {0, 0};
+GLint pos[2] = {0, 0};
+GLfloat model_view_matrix[16] = {
+    0.577350, -0.3333, 0.57735, 0.00000, //
+    0.000000, 0.66667, 0.57735, 0.00000, //
+    -0.57735, -0.3333, 0.57735, 0.00000, //
+    0.000000, 0.00000, -17.000, 1.00000, //
+};
+GLfloat projection_matrix[16] = {
+    15.0000, 0.00000, 0.00000, 0.00000, //
+    0.00000, 15.0000, 0.00000, 0.00000, //
+    0.00000, 0.00000, -1.0002, -1.0000, //
+    0.00000, 0.00000, -10.001, 0.00000, //
+};
 
 void window_resize(int width, int height) {
   // std::cout << "glViewport(0,0,"<< width << "," << height <<
@@ -25,6 +41,14 @@ void window_resize(int width, int height) {
 }
 
 void display() {
+  // GLuint offset_id = glGetUniformLocation(program_id, "pan");
+  // glUniform2fv(offset_id, 1, offset);
+  model_view_matrix[12] = offset[0];
+  model_view_matrix[13] = offset[1];
+
+  GLuint mvm_id = glGetUniformLocation(program_id, "model_view_matrix");
+  glUniformMatrix4fv(mvm_id, 1, GL_FALSE, model_view_matrix);
+
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   TEST_OPENGL_ERROR();
   glBindVertexArray(bunny_vao_id);
@@ -36,17 +60,46 @@ void display() {
   glutSwapBuffers();
 }
 
+void mouse_button_handler(int button, int state, int x, int y) {
+  if (state == GLUT_DOWN) {
+    pos[0] = x;
+    pos[1] = y;
+  } else {
+    pos[0] = 0;
+    pos[1] = 0;
+    held = false;
+  }
+}
+
+void mouse_motion_handler(int x, int y) {
+  if (!held) {
+    pos[0] = x;
+    pos[1] = y;
+    held = true;
+  }
+
+  offset[0] -= (pos[0] - x) / 1000.;
+  offset[1] += (pos[1] - y) / 1000.;
+
+  pos[0] = x;
+  pos[1] = y;
+
+  glutPostRedisplay();
+}
+
 void init_glut(int &argc, char *argv[]) {
   // glewExperimental = GL_TRUE;
   glutInit(&argc, argv);
   glutInitContextVersion(4, 5);
   glutInitContextProfile(GLUT_CORE_PROFILE | GLUT_DEBUG);
-  glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH);
+  glutInitDisplayMode(GLUT_RGBA | GLUT_SINGLE | GLUT_DEPTH);
   glutInitWindowSize(1024, 1024);
   glutInitWindowPosition(100, 100);
   glutCreateWindow("Shader Programming");
   glutDisplayFunc(display);
   glutReshapeFunc(window_resize);
+  glutMouseFunc(mouse_button_handler);
+  glutMotionFunc(mouse_motion_handler);
 }
 
 bool init_glew() {
