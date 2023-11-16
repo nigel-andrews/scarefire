@@ -7,19 +7,14 @@ layout( triangles ) in;
 layout( line_strip, max_vertices=SEGMENTS ) out;
 
 uniform vec2 pan;
+
 uniform mat4 model_view_matrix;
+uniform mat4 projection_matrix;
 
 in vec3 vColor[3];
 in vec3 vNormal[3];
 
 out vec3 color;
-
-mat4 projection_matrix = mat4(
-  15.00000, 0.00000, 0.00000, 0.00000,
-  0.00000, 15.00000, 0.00000, 0.00000,
-  0.00000, 0.00000, -1.00020, -1.00000,
-  0.00000, 0.00000, -10.00100, 0.00000
-);
 
 void main() {
   vec4 middle = (gl_in[0].gl_Position + gl_in[1].gl_Position + gl_in[2].gl_Position) / 3.;

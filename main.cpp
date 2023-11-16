@@ -15,11 +15,14 @@
   } while (0)
 
 GLuint bunny_vao_id;
-GLuint program_id;
-// bool m1 = false;
+
+GLuint hair_program_id;
+GLuint surface_program_id;
+
 bool held = false;
 GLfloat offset[2] = {0, 0};
 GLint pos[2] = {0, 0};
+
 GLfloat model_view_matrix[16] = {
     0.577350, -0.3333, 0.57735, 0.00000, //
     0.000000, 0.66667, 0.57735, 0.00000, //
@@ -32,6 +35,26 @@ GLfloat projection_matrix[16] = {
     0.00000, 0.00000, -1.0002, -1.0000, //
     0.00000, 0.00000, -10.001, 0.00000, //
 };
+
+void use_shader(GLuint shader_id) {
+  glUseProgram(shader_id);
+  TEST_OPENGL_ERROR();
+
+  GLuint mvm_id = glGetUniformLocation(shader_id, "model_view_matrix");
+  glUniformMatrix4fv(mvm_id, 1, GL_FALSE, model_view_matrix);
+  TEST_OPENGL_ERROR();
+
+  GLuint proj_id = glGetUniformLocation(shader_id, "projection_matrix");
+  glUniformMatrix4fv(proj_id, 1, GL_FALSE, projection_matrix);
+  TEST_OPENGL_ERROR();
+}
+
+void render() {
+  glBindVertexArray(bunny_vao_id);
+  TEST_OPENGL_ERROR();
+  glDrawArrays(GL_TRIANGLES, 0, vertex_buffer_data.size());
+  TEST_OPENGL_ERROR();
+}
 
 void window_resize(int width, int height) {
   // std::cout << "glViewport(0,0,"<< width << "," << height <<
@@ -46,17 +69,17 @@ void display() {
   model_view_matrix[12] = offset[0];
   model_view_matrix[13] = offset[1];
 
-  GLuint mvm_id = glGetUniformLocation(program_id, "model_view_matrix");
-  glUniformMatrix4fv(mvm_id, 1, GL_FALSE, model_view_matrix);
-
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
   TEST_OPENGL_ERROR();
-  glBindVertexArray(bunny_vao_id);
-  TEST_OPENGL_ERROR();
-  glDrawArrays(GL_TRIANGLES, 0, vertex_buffer_data.size());
-  TEST_OPENGL_ERROR();
+
+  use_shader(surface_program_id);
+  render();
+  use_shader(hair_program_id);
+  render();
+
   glBindVertexArray(0);
   TEST_OPENGL_ERROR();
+
   glutSwapBuffers();
 }
 
@@ -127,10 +150,10 @@ void init_object_vbo() {
   int index_vbo = 0;
   GLuint vbo_ids[max_nb_vbo];
 
-  GLint vertex_location = glGetAttribLocation(program_id, "position");
+  GLint vertex_location = glGetAttribLocation(hair_program_id, "position");
   TEST_OPENGL_ERROR();
   GLint normal_smooth_location =
-      glGetAttribLocation(program_id, "normalSmooth");
+      glGetAttribLocation(hair_program_id, "normalSmooth");
   TEST_OPENGL_ERROR();
 
   glGenVertexArrays(1, &bunny_vao_id);
@@ -189,10 +212,95 @@ std::string load(const std::string &filename) {
   return file_content;
 }
 
-bool init_shaders() {
-  std::string vertex_src = load("vertex.shd");
-  std::string geometry_src = load("geometry.shd");
-  std::string fragment_src = load("fragment.shd");
+bool init_surface_shader() {
+  std::string vertex_src = load("shaders/surface/vertex.shd");
+  std::string fragment_src = load("shaders/surface/fragment.shd");
+  GLuint shader_id[2];
+  GLint compile_status = GL_TRUE;
+  char *vertex_shd_src =
+      (char *)std::malloc(vertex_src.length() * sizeof(char));
+  char *fragment_shd_src =
+      (char *)std::malloc(fragment_src.length() * sizeof(char));
+  vertex_src.copy(vertex_shd_src, vertex_src.length());
+  fragment_src.copy(fragment_shd_src, fragment_src.length());
+
+  shader_id[0] = glCreateShader(GL_VERTEX_SHADER);
+  TEST_OPENGL_ERROR();
+  shader_id[1] = glCreateShader(GL_FRAGMENT_SHADER);
+  TEST_OPENGL_ERROR();
+
+  glShaderSource(shader_id[0], 1, (const GLchar **)&(vertex_shd_src), 0);
+  TEST_OPENGL_ERROR();
+  glShaderSource(shader_id[1], 1, (const GLchar **)&(fragment_shd_src), 0);
+  TEST_OPENGL_ERROR();
+
+  for (int i = 0; i < 2; i++) {
+    glCompileShader(shader_id[i]);
+    TEST_OPENGL_ERROR();
+
+    glGetShaderiv(shader_id[i], GL_COMPILE_STATUS, &compile_status);
+    if (compile_status != GL_TRUE) {
+      GLint log_size;
+      char *shader_log;
+      glGetShaderiv(shader_id[i], GL_INFO_LOG_LENGTH, &log_size);
+      shader_log = (char *)std::malloc(
+          log_size + 1); /* +1 pour le caractere de fin de chaine '\0' */
+      if (shader_log != 0) {
+        glGetShaderInfoLog(shader_id[i], log_size, &log_size, shader_log);
+        std::cerr << "SHADER " << i << ": " << shader_log << std::endl;
+        std::free(shader_log);
+      }
+      std::free(vertex_shd_src);
+      std::free(fragment_shd_src);
+      glDeleteShader(shader_id[0]);
+      glDeleteShader(shader_id[1]);
+      return false;
+    }
+  }
+  std::free(vertex_shd_src);
+  std::free(fragment_shd_src);
+
+  GLint link_status = GL_TRUE;
+  surface_program_id = glCreateProgram();
+  TEST_OPENGL_ERROR();
+  if (surface_program_id == 0)
+    return false;
+  for (int i = 0; i < 2; i++) {
+    glAttachShader(surface_program_id, shader_id[i]);
+    TEST_OPENGL_ERROR();
+  }
+  glLinkProgram(surface_program_id);
+  TEST_OPENGL_ERROR();
+  glGetProgramiv(surface_program_id, GL_LINK_STATUS, &link_status);
+  if (link_status != GL_TRUE) {
+    GLint log_size;
+    char *program_log;
+    glGetProgramiv(surface_program_id, GL_INFO_LOG_LENGTH, &log_size);
+    program_log = (char *)std::malloc(
+        log_size + 1); /* +1 pour le caractere de fin de chaine '\0' */
+    if (program_log != 0) {
+      glGetProgramInfoLog(surface_program_id, log_size, &log_size, program_log);
+      std::cerr << "Program " << program_log << std::endl;
+      std::free(program_log);
+    }
+    glDeleteProgram(surface_program_id);
+    TEST_OPENGL_ERROR();
+    glDeleteShader(shader_id[0]);
+    TEST_OPENGL_ERROR();
+    glDeleteShader(shader_id[1]);
+    TEST_OPENGL_ERROR();
+    surface_program_id = 0;
+    return false;
+  }
+  glUseProgram(surface_program_id);
+  TEST_OPENGL_ERROR();
+  return true;
+}
+
+bool init_hair_shader() {
+  std::string vertex_src = load("shaders/hair/vertex.shd");
+  std::string geometry_src = load("shaders/hair/geometry.shd");
+  std::string fragment_src = load("shaders/hair/fragment.shd");
   GLuint shader_id[3];
   GLint compile_status = GL_TRUE;
   char *vertex_shd_src =
@@ -249,29 +357,29 @@ bool init_shaders() {
   std::free(fragment_shd_src);
 
   GLint link_status = GL_TRUE;
-  program_id = glCreateProgram();
+  hair_program_id = glCreateProgram();
   TEST_OPENGL_ERROR();
-  if (program_id == 0)
+  if (hair_program_id == 0)
     return false;
   for (int i = 0; i < 3; i++) {
-    glAttachShader(program_id, shader_id[i]);
+    glAttachShader(hair_program_id, shader_id[i]);
     TEST_OPENGL_ERROR();
   }
-  glLinkProgram(program_id);
+  glLinkProgram(hair_program_id);
   TEST_OPENGL_ERROR();
-  glGetProgramiv(program_id, GL_LINK_STATUS, &link_status);
+  glGetProgramiv(hair_program_id, GL_LINK_STATUS, &link_status);
   if (link_status != GL_TRUE) {
     GLint log_size;
     char *program_log;
-    glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, &log_size);
+    glGetProgramiv(hair_program_id, GL_INFO_LOG_LENGTH, &log_size);
     program_log = (char *)std::malloc(
         log_size + 1); /* +1 pour le caractere de fin de chaine '\0' */
     if (program_log != 0) {
-      glGetProgramInfoLog(program_id, log_size, &log_size, program_log);
+      glGetProgramInfoLog(hair_program_id, log_size, &log_size, program_log);
       std::cerr << "Program " << program_log << std::endl;
       std::free(program_log);
     }
-    glDeleteProgram(program_id);
+    glDeleteProgram(hair_program_id);
     TEST_OPENGL_ERROR();
     glDeleteShader(shader_id[0]);
     TEST_OPENGL_ERROR();
@@ -279,10 +387,10 @@ bool init_shaders() {
     TEST_OPENGL_ERROR();
     glDeleteShader(shader_id[2]);
     TEST_OPENGL_ERROR();
-    program_id = 0;
+    hair_program_id = 0;
     return false;
   }
-  glUseProgram(program_id);
+  glUseProgram(hair_program_id);
   TEST_OPENGL_ERROR();
   return true;
 }
@@ -292,7 +400,8 @@ int main(int argc, char *argv[]) {
   if (!init_glew())
     std::exit(-1);
   init_GL();
-  init_shaders();
+  init_surface_shader();
+  init_hair_shader();
   init_object_vbo();
   glutMainLoop();
 }
