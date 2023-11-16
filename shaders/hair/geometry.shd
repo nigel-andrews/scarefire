@@ -1,7 +1,7 @@
 #version 450
 #define SEGMENTS 5
 #define LENGTH 0.3
-#define GRAVITY 0.1
+#define GRAVITY 0.2
 
 layout( triangles ) in;
 layout( line_strip, max_vertices=SEGMENTS ) out;

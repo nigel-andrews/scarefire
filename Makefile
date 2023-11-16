@@ -14,7 +14,7 @@ HXX_FILES = bunny.hh
 HXX_FILES +=
 OBJ_FILES = $(CPP_FILES:.cpp=.o)
 
-CXX_FLAGS += -Wall -Wextra -O3 -g -std=c++11
+CXX_FLAGS += -Wall -Wextra -O3 -g -std=c++23
 CXX_FLAGS +=
 CXX_FLAGS += -m64 -march=native
 CXX_FLAGS += -fopt-info-vec-optimized #-fopt-info-vec-missed -ftree-vectorize

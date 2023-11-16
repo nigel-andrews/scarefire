@@ -3,6 +3,7 @@
 #include <GL/freeglut.h>
 #include <fstream>
 #include <iostream>
+#include <optional>
 #include <vector>
 
 #include "bunny.hh"
@@ -13,6 +14,12 @@
     if (err != GL_NO_ERROR)                                                    \
       std::cerr << "OpenGL ERROR! " << __LINE__ << std::endl;                  \
   } while (0)
+
+#define DOGL(...)                                                              \
+  {                                                                            \
+    __VA_ARGS__;                                                               \
+    TEST_OPENGL_ERROR();                                                       \
+  }
 
 GLuint bunny_vao_id;
 
@@ -212,187 +219,103 @@ std::string load(const std::string &filename) {
   return file_content;
 }
 
-bool init_surface_shader() {
-  std::string vertex_src = load("shaders/surface/vertex.shd");
-  std::string fragment_src = load("shaders/surface/fragment.shd");
-  GLuint shader_id[2];
-  GLint compile_status = GL_TRUE;
-  char *vertex_shd_src =
-      (char *)std::malloc(vertex_src.length() * sizeof(char));
-  char *fragment_shd_src =
-      (char *)std::malloc(fragment_src.length() * sizeof(char));
-  vertex_src.copy(vertex_shd_src, vertex_src.length());
-  fragment_src.copy(fragment_shd_src, fragment_src.length());
+struct ShaderConfig {
+  std::string vertex;
+  std::optional<std::string> geometry;
+  std::string fragment;
+};
 
-  shader_id[0] = glCreateShader(GL_VERTEX_SHADER);
-  TEST_OPENGL_ERROR();
-  shader_id[1] = glCreateShader(GL_FRAGMENT_SHADER);
-  TEST_OPENGL_ERROR();
+GLuint load_shader(std::string &path, int type) {
+  GLuint id;
+  DOGL(id = glCreateShader(type));
 
-  glShaderSource(shader_id[0], 1, (const GLchar **)&(vertex_shd_src), 0);
-  TEST_OPENGL_ERROR();
-  glShaderSource(shader_id[1], 1, (const GLchar **)&(fragment_shd_src), 0);
-  TEST_OPENGL_ERROR();
+  std::string src = load(path);
+  const char *c_src = src.c_str();
+  // char *shd_src = (char *)std::malloc(src.length() * sizeof(char));
+  // src.copy(shd_src, src.length());
 
-  for (int i = 0; i < 2; i++) {
-    glCompileShader(shader_id[i]);
-    TEST_OPENGL_ERROR();
+  DOGL(glShaderSource(id, 1, &c_src, 0));
 
-    glGetShaderiv(shader_id[i], GL_COMPILE_STATUS, &compile_status);
-    if (compile_status != GL_TRUE) {
-      GLint log_size;
-      char *shader_log;
-      glGetShaderiv(shader_id[i], GL_INFO_LOG_LENGTH, &log_size);
-      shader_log = (char *)std::malloc(
-          log_size + 1); /* +1 pour le caractere de fin de chaine '\0' */
-      if (shader_log != 0) {
-        glGetShaderInfoLog(shader_id[i], log_size, &log_size, shader_log);
-        std::cerr << "SHADER " << i << ": " << shader_log << std::endl;
-        std::free(shader_log);
-      }
-      std::free(vertex_shd_src);
-      std::free(fragment_shd_src);
-      glDeleteShader(shader_id[0]);
-      glDeleteShader(shader_id[1]);
-      return false;
-    }
-  }
-  std::free(vertex_shd_src);
-  std::free(fragment_shd_src);
+  // std::free(shd_src);
 
-  GLint link_status = GL_TRUE;
-  surface_program_id = glCreateProgram();
-  TEST_OPENGL_ERROR();
-  if (surface_program_id == 0)
-    return false;
-  for (int i = 0; i < 2; i++) {
-    glAttachShader(surface_program_id, shader_id[i]);
-    TEST_OPENGL_ERROR();
-  }
-  glLinkProgram(surface_program_id);
-  TEST_OPENGL_ERROR();
-  glGetProgramiv(surface_program_id, GL_LINK_STATUS, &link_status);
-  if (link_status != GL_TRUE) {
-    GLint log_size;
-    char *program_log;
-    glGetProgramiv(surface_program_id, GL_INFO_LOG_LENGTH, &log_size);
-    program_log = (char *)std::malloc(
-        log_size + 1); /* +1 pour le caractere de fin de chaine '\0' */
-    if (program_log != 0) {
-      glGetProgramInfoLog(surface_program_id, log_size, &log_size, program_log);
-      std::cerr << "Program " << program_log << std::endl;
-      std::free(program_log);
-    }
-    glDeleteProgram(surface_program_id);
-    TEST_OPENGL_ERROR();
-    glDeleteShader(shader_id[0]);
-    TEST_OPENGL_ERROR();
-    glDeleteShader(shader_id[1]);
-    TEST_OPENGL_ERROR();
-    surface_program_id = 0;
-    return false;
-  }
-  glUseProgram(surface_program_id);
-  TEST_OPENGL_ERROR();
-  return true;
+  return id;
 }
 
-bool init_hair_shader() {
-  std::string vertex_src = load("shaders/hair/vertex.shd");
-  std::string geometry_src = load("shaders/hair/geometry.shd");
-  std::string fragment_src = load("shaders/hair/fragment.shd");
-  GLuint shader_id[3];
+GLint init_arbitrary_shader(ShaderConfig config) {
+  GLint program_id;
+  std::vector<GLuint> shader_ids;
+
+  shader_ids.emplace_back(load_shader(config.vertex, GL_VERTEX_SHADER));
+
+  if (config.geometry.has_value())
+    shader_ids.emplace_back(
+        load_shader(config.geometry.value(), GL_GEOMETRY_SHADER));
+
+  shader_ids.emplace_back(load_shader(config.fragment, GL_FRAGMENT_SHADER));
+
   GLint compile_status = GL_TRUE;
-  char *vertex_shd_src =
-      (char *)std::malloc(vertex_src.length() * sizeof(char));
-  char *geometry_shd_src =
-      (char *)std::malloc(geometry_src.length() * sizeof(char));
-  char *fragment_shd_src =
-      (char *)std::malloc(fragment_src.length() * sizeof(char));
-  vertex_src.copy(vertex_shd_src, vertex_src.length());
-  geometry_src.copy(geometry_shd_src, geometry_src.length());
-  fragment_src.copy(fragment_shd_src, fragment_src.length());
 
-  shader_id[0] = glCreateShader(GL_VERTEX_SHADER);
-  TEST_OPENGL_ERROR();
-  shader_id[1] = glCreateShader(GL_GEOMETRY_SHADER);
-  TEST_OPENGL_ERROR();
-  shader_id[2] = glCreateShader(GL_FRAGMENT_SHADER);
-  TEST_OPENGL_ERROR();
+  for (int i = 0; i < shader_ids.size(); i++) {
+    DOGL(glCompileShader(shader_ids[i]));
 
-  glShaderSource(shader_id[0], 1, (const GLchar **)&(vertex_shd_src), 0);
-  TEST_OPENGL_ERROR();
-  glShaderSource(shader_id[1], 1, (const GLchar **)&(geometry_shd_src), 0);
-  TEST_OPENGL_ERROR();
-  glShaderSource(shader_id[2], 1, (const GLchar **)&(fragment_shd_src), 0);
-  TEST_OPENGL_ERROR();
+    glGetShaderiv(shader_ids[i], GL_COMPILE_STATUS, &compile_status);
 
-  for (int i = 0; i < 3; i++) {
-    glCompileShader(shader_id[i]);
-    TEST_OPENGL_ERROR();
-
-    glGetShaderiv(shader_id[i], GL_COMPILE_STATUS, &compile_status);
+    // Error
     if (compile_status != GL_TRUE) {
       GLint log_size;
       char *shader_log;
-      glGetShaderiv(shader_id[i], GL_INFO_LOG_LENGTH, &log_size);
-      shader_log = (char *)std::malloc(
-          log_size + 1); /* +1 pour le caractere de fin de chaine '\0' */
-      if (shader_log != 0) {
-        glGetShaderInfoLog(shader_id[i], log_size, &log_size, shader_log);
+
+      glGetShaderiv(shader_ids[i], GL_INFO_LOG_LENGTH, &log_size);
+      shader_log = (char *)std::malloc(log_size + 1);
+      if (shader_log) {
+        glGetShaderInfoLog(shader_ids[i], log_size, &log_size, shader_log);
         std::cerr << "SHADER " << i << ": " << shader_log << std::endl;
         std::free(shader_log);
       }
-      std::free(vertex_shd_src);
-      std::free(geometry_shd_src);
-      std::free(fragment_shd_src);
-      glDeleteShader(shader_id[0]);
-      glDeleteShader(shader_id[1]);
-      glDeleteShader(shader_id[2]);
-      return false;
+
+      for (int j = 0; j <= i; j++)
+        glDeleteShader(shader_ids[j]);
+
+      return -1;
     }
   }
-  std::free(vertex_shd_src);
-  std::free(geometry_shd_src);
-  std::free(fragment_shd_src);
+
+  DOGL(program_id = glCreateProgram());
+  if (!program_id)
+    return -1;
+
+  for (int i = 0; i < shader_ids.size(); i++)
+    DOGL(glAttachShader(program_id, shader_ids[i]));
+
+  DOGL(glLinkProgram(program_id));
 
   GLint link_status = GL_TRUE;
-  hair_program_id = glCreateProgram();
-  TEST_OPENGL_ERROR();
-  if (hair_program_id == 0)
-    return false;
-  for (int i = 0; i < 3; i++) {
-    glAttachShader(hair_program_id, shader_id[i]);
-    TEST_OPENGL_ERROR();
-  }
-  glLinkProgram(hair_program_id);
-  TEST_OPENGL_ERROR();
-  glGetProgramiv(hair_program_id, GL_LINK_STATUS, &link_status);
+  glGetProgramiv(program_id, GL_LINK_STATUS, &link_status);
+
+  // Error
   if (link_status != GL_TRUE) {
     GLint log_size;
     char *program_log;
-    glGetProgramiv(hair_program_id, GL_INFO_LOG_LENGTH, &log_size);
-    program_log = (char *)std::malloc(
-        log_size + 1); /* +1 pour le caractere de fin de chaine '\0' */
-    if (program_log != 0) {
-      glGetProgramInfoLog(hair_program_id, log_size, &log_size, program_log);
+
+    glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, &log_size);
+    program_log = (char *)std::malloc(log_size + 1);
+    if (!program_log) {
+      glGetProgramInfoLog(program_id, log_size, &log_size, program_log);
       std::cerr << "Program " << program_log << std::endl;
       std::free(program_log);
     }
-    glDeleteProgram(hair_program_id);
-    TEST_OPENGL_ERROR();
-    glDeleteShader(shader_id[0]);
-    TEST_OPENGL_ERROR();
-    glDeleteShader(shader_id[1]);
-    TEST_OPENGL_ERROR();
-    glDeleteShader(shader_id[2]);
-    TEST_OPENGL_ERROR();
-    hair_program_id = 0;
-    return false;
+
+    DOGL(glDeleteProgram(program_id));
+    for (int i = 0; i < shader_ids.size(); i++)
+      DOGL(glDeleteShader(shader_ids[i]));
+
+    return -1;
   }
-  glUseProgram(hair_program_id);
-  TEST_OPENGL_ERROR();
-  return true;
+
+  // Check for load success here, easier to debug
+  DOGL(glUseProgram(program_id));
+
+  return program_id;
 }
 
 int main(int argc, char *argv[]) {
@@ -400,8 +323,19 @@ int main(int argc, char *argv[]) {
   if (!init_glew())
     std::exit(-1);
   init_GL();
-  init_surface_shader();
-  init_hair_shader();
+
+  surface_program_id = init_arbitrary_shader(ShaderConfig{
+      .vertex = "shaders/surface/vertex.shd",
+      .geometry = {},
+      .fragment = "shaders/surface/fragment.shd",
+  });
+
+  hair_program_id = init_arbitrary_shader(ShaderConfig{
+      .vertex = "shaders/hair/vertex.shd",
+      .geometry = "shaders/hair/geometry.shd",
+      .fragment = "shaders/hair/fragment.shd",
+  });
+
   init_object_vbo();
   glutMainLoop();
 }
