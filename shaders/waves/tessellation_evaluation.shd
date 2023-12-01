@@ -21,13 +21,13 @@ float wave(float amplitude, float freq, int octave, float x, float y) {
 }
 
 void main() {
-  vec3 wave_result = vec3(0, 1, 0) * wave(base_amplitude, 5. * base_freq, 1, 1., 0.);
+  vec3 wave_result = vec3(0, 1, 0) * wave(2. * base_amplitude, 5. * base_freq, 1, 1., 0.);
 
   vec4 p1 = mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x);
   vec4 p2 = mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);
   vec4 p = mix(p1, p2, gl_TessCoord.y);
   gl_Position = projection_matrix * model_view_matrix * (p + vec4(wave_result, 1));
-  tesPosition = gl_Position.xyz;
+  tesPosition = p.xyz;
 
   vec3 n1 = mix(tcsNormal[0], tcsNormal[1], gl_TessCoord.x);
   vec3 n2 = mix(tcsNormal[3], tcsNormal[2], gl_TessCoord.x);

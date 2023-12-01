@@ -35,7 +35,7 @@ static const std::vector<GLfloat> vertex_buffer_data {
   std::cout << STR(VAR) "[" << __LINE__ << "]: " << VAR << std::endl;
 
 GLuint vao_id;
-GLint surface_program_id;
+GLuint surface_program_id;
 
 bool held = false;
 GLfloat offset[3] = {0, 0, -5};
@@ -69,7 +69,7 @@ void use_shader(GLuint shader_id) {
   DOGL(glUniformMatrix4fv(proj_id, 1, GL_FALSE, projection_matrix));
 
   GLuint anim_time_id;
-  DOGL(anim_time_id = glGetUniformLocation(surface_program_id, "anim_time"));
+  DOGL(anim_time_id = glGetUniformLocation(shader_id, "anim_time"));
   DOGL(glUniform1f(anim_time_id, anim_time));
 }
 
@@ -95,8 +95,6 @@ void display() {
 
 void anim() {
   anim_time += 0.1;
-  // DBG(anim_time);
-
   glutPostRedisplay();
 }
 
@@ -347,8 +345,6 @@ GLint init_arbitrary_shader(ShaderConfig config) {
     return -1;
 
   // Check for load success here, easier to debug
-  DOGL(glUseProgram(program_id));
-
   use_shader(program_id);
 
   return program_id;
@@ -375,6 +371,15 @@ GLint init_compute_shader(std::string &&path) {
   return program_id;
 }
 
+GLuint assert_not_neg1(GLint value, std::string message) {
+  if (value < 0) {
+    std::cerr << message << std::endl;
+    std::exit(1);
+  }
+
+  return value;
+}
+
 int main(int argc, char *argv[]) {
   init_glut(argc, argv);
   if (!init_glew())
@@ -382,12 +387,14 @@ int main(int argc, char *argv[]) {
   init_GL();
   init_anim();
 
-  surface_program_id = init_arbitrary_shader(ShaderConfig{
-      .vertex = "shaders/waves/vertex.shd",
-      .tesselation_control = "shaders/waves/tessellation_control.shd",
-      .tesselation_evaluation = "shaders/waves/tessellation_evaluation.shd",
-      .fragment = "shaders/waves/fragment.shd",
-  });
+  surface_program_id = assert_not_neg1(
+      init_arbitrary_shader(ShaderConfig{
+          .vertex = "shaders/waves/vertex.shd",
+          .tesselation_control = "shaders/waves/tessellation_control.shd",
+          .tesselation_evaluation = "shaders/waves/tessellation_evaluation.shd",
+          .fragment = "shaders/waves/fragment.shd",
+      }),
+      "Invalid shader");
 
   init_object_vbo();
 
