@@ -19,7 +19,7 @@ CXX_FLAGS +=
 CXX_FLAGS += -m64 -march=native
 CXX_FLAGS += -fopt-info-vec-optimized #-fopt-info-vec-missed -ftree-vectorize
 #CXX_FLAGS += -I/home/jonathan/work/enseignement/matieres/synthese/prog/opengl/compute_shader/jf_gl_tools/build_head/src
-LDXX_FLAGS = -lGL  -lGLEW -lglut -lpthread
+LDXX_FLAGS = -lGL  -lGLEW -lglut -lpthread -lstdc++_libbacktrace
 #LDXX_FLAGS += /home/jonathan/work/enseignement/matieres/synthese/prog/opengl/compute_shader/jf_gl_tools/dist_lib/libjfglt.a
 
 MAIN_FILE = main.cpp

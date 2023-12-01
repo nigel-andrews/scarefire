@@ -7,7 +7,15 @@
 #include <optional>
 #include <vector>
 
-#include "bunny.hh"
+// #include "bunny.hh"
+// clang-format off
+static const std::vector<GLfloat> vertex_buffer_data {
+  -0.5, 0.0, +0.5,
+  +0.5, 0.0, +0.5,
+  +0.5, 0.0, -0.5,
+  -0.5, 0.0, -0.5,
+};
+// clang-format on
 
 #define TEST_OPENGL_ERROR()                                                    \
   do {                                                                         \
@@ -22,16 +30,19 @@
     TEST_OPENGL_ERROR();                                                       \
   } while (0)
 
-GLuint bunny_vao_id;
+#define STR(s) #s
+#define DBG(VAR)                                                               \
+  std::cout << STR(VAR) "[" << __LINE__ << "]: " << VAR << std::endl;
 
-GLuint hair_program_id;
-GLuint surface_program_id;
-GLuint compute_program_id;
+GLuint vao_id;
+GLint surface_program_id;
 
 bool held = false;
-GLfloat offset[3] = {0, 0, -17};
+GLfloat offset[3] = {0, 0, -5};
 GLint pos[2] = {0, 0};
 bool shift = false;
+
+float anim_time;
 
 GLfloat model_view_matrix[16] = {
     0.577350, -0.3333, 0.57735, 0.00000, //
@@ -47,30 +58,24 @@ GLfloat projection_matrix[16] = {
 };
 
 void use_shader(GLuint shader_id) {
-  glUseProgram(shader_id);
-  TEST_OPENGL_ERROR();
+  DOGL(glUseProgram(shader_id));
 
-  GLuint mvm_id = glGetUniformLocation(shader_id, "model_view_matrix");
-  glUniformMatrix4fv(mvm_id, 1, GL_FALSE, model_view_matrix);
-  TEST_OPENGL_ERROR();
+  GLuint mvm_id;
+  DOGL(mvm_id = glGetUniformLocation(shader_id, "model_view_matrix"));
+  DOGL(glUniformMatrix4fv(mvm_id, 1, GL_FALSE, model_view_matrix));
 
-  GLuint proj_id = glGetUniformLocation(shader_id, "projection_matrix");
-  glUniformMatrix4fv(proj_id, 1, GL_FALSE, projection_matrix);
-  TEST_OPENGL_ERROR();
+  GLuint proj_id;
+  DOGL(proj_id = glGetUniformLocation(shader_id, "projection_matrix"));
+  DOGL(glUniformMatrix4fv(proj_id, 1, GL_FALSE, projection_matrix));
+
+  GLuint anim_time_id;
+  DOGL(anim_time_id = glGetUniformLocation(surface_program_id, "anim_time"));
+  DOGL(glUniform1f(anim_time_id, anim_time));
 }
 
 void render() {
-  glBindVertexArray(bunny_vao_id);
-  TEST_OPENGL_ERROR();
-  glDrawArrays(GL_TRIANGLES, 0, vertex_buffer_data.size());
-  TEST_OPENGL_ERROR();
-}
-
-void window_resize(int width, int height) {
-  // std::cout << "glViewport(0,0,"<< width << "," << height <<
-  // ");TEST_OPENGL_ERROR();" << std::endl;
-  glViewport(0, 0, width, height);
-  TEST_OPENGL_ERROR();
+  DOGL(glBindVertexArray(vao_id));
+  DOGL(glDrawArrays(GL_PATCHES, 0, 4));
 }
 
 void display() {
@@ -78,22 +83,29 @@ void display() {
   model_view_matrix[4 * 3 + 1] = offset[1];
   model_view_matrix[4 * 3 + 2] = offset[2];
 
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  TEST_OPENGL_ERROR();
+  DOGL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
   use_shader(surface_program_id);
   render();
-  use_shader(hair_program_id);
-  render();
 
-  DOGL(glUseProgram(compute_program_id));
-  DOGL(glDispatchCompute(1, 1024, 1));
-
-  glBindVertexArray(0);
-  TEST_OPENGL_ERROR();
+  DOGL(glBindVertexArray(0));
 
   glutSwapBuffers();
 }
+
+void anim() {
+  anim_time += 0.1;
+  // DBG(anim_time);
+
+  glutPostRedisplay();
+}
+
+void timer(int value) {
+  anim();
+  glutTimerFunc(33, timer, 0);
+}
+
+void init_anim() { glutTimerFunc(33, timer, 0); }
 
 void mouse_button_handler(int button, int state, int x, int y) {
   (void)button;
@@ -125,7 +137,12 @@ void mouse_motion_handler(int x, int y) {
   pos[0] = x;
   pos[1] = y;
 
-  glutPostRedisplay();
+  // Now done in anim
+  // glutPostRedisplay();
+}
+
+void window_resize(int width, int height) {
+  DOGL(glViewport(0, 0, width, height));
 }
 
 void init_glut(int &argc, char *argv[]) {
@@ -152,14 +169,11 @@ bool init_glew() {
 }
 
 void init_GL() {
-  glEnable(GL_DEPTH_TEST);
-  TEST_OPENGL_ERROR();
-  glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-  TEST_OPENGL_ERROR();
-  glEnable(GL_CULL_FACE);
-  TEST_OPENGL_ERROR();
-  glClearColor(0.4, 0.4, 0.4, 1.0);
-  TEST_OPENGL_ERROR();
+  DOGL(glEnable(GL_DEPTH_TEST));
+  DOGL(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
+  DOGL(glEnable(GL_CULL_FACE));
+  DOGL(glClearColor(0.4, 0.4, 0.4, 1.0));
+  DOGL(glPatchParameteri(GL_PATCH_VERTICES, 4));
 }
 
 void init_object_vbo() {
@@ -169,18 +183,17 @@ void init_object_vbo() {
   GLuint vbo_ids[max_nb_vbo];
 
   GLint vertex_location;
-  DOGL(vertex_location = glGetAttribLocation(hair_program_id, "position"));
-  GLint normal_smooth_location;
-  DOGL(normal_smooth_location =
-           glGetAttribLocation(hair_program_id, "normalSmooth"));
+  DOGL(vertex_location = glGetAttribLocation(surface_program_id, "position"));
+  // GLint normal_smooth_location; DOGL(normal_smooth_location =
+  //          glGetAttribLocation(hair_program_id, "normalSmooth"));
 
-  DOGL(glGenVertexArrays(1, &bunny_vao_id));
-  DOGL(glBindVertexArray(bunny_vao_id));
+  DOGL(glGenVertexArrays(1, &vao_id));
+  DOGL(glBindVertexArray(vao_id));
 
   if (vertex_location != -1)
     nb_vbo++;
-  if (normal_smooth_location != -1)
-    nb_vbo++;
+  // if (normal_smooth_location != -1)
+  //   nb_vbo++;
   DOGL(glGenBuffers(nb_vbo, vbo_ids));
 
   if (vertex_location != -1) {
@@ -193,16 +206,18 @@ void init_object_vbo() {
     DOGL(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, vbo_ids[index_vbo - 1]));
   }
 
-  if (normal_smooth_location != -1) {
-    DOGL(glBindBuffer(GL_ARRAY_BUFFER, vbo_ids[index_vbo++]));
-    DOGL(glBufferData(GL_ARRAY_BUFFER,
-                      normal_smooth_buffer_data.size() * sizeof(float),
-                      normal_smooth_buffer_data.data(), GL_STATIC_DRAW));
-    DOGL(glVertexAttribPointer(normal_smooth_location, 3, GL_FLOAT, GL_FALSE, 0,
-                               0));
-    DOGL(glEnableVertexAttribArray(normal_smooth_location));
-    DOGL(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, vbo_ids[index_vbo - 1]));
-  }
+  // if (normal_smooth_location != -1) {
+  //   DOGL(glBindBuffer(GL_ARRAY_BUFFER, vbo_ids[index_vbo++]));
+  //   DOGL(glBufferData(GL_ARRAY_BUFFER,
+  //                     normal_smooth_buffer_data.size() * sizeof(float),
+  //                     normal_smooth_buffer_data.data(), GL_STATIC_DRAW));
+  //   DOGL(glVertexAttribPointer(normal_smooth_location, 3, GL_FLOAT, GL_FALSE,
+  //   0,
+  //                              0));
+  //   DOGL(glEnableVertexAttribArray(normal_smooth_location));
+  //   DOGL(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, vbo_ids[index_vbo -
+  //   1]));
+  // }
 
   glBindVertexArray(0);
 }
@@ -283,7 +298,7 @@ bool checked_link_program(GLuint program_id, std::vector<GLuint> &shader_ids) {
 
     glGetProgramiv(program_id, GL_INFO_LOG_LENGTH, &log_size);
     program_log = (char *)std::malloc(log_size + 1);
-    if (!program_log) {
+    if (program_log) {
       glGetProgramInfoLog(program_id, log_size, &log_size, program_log);
       std::cerr << "Program " << program_log << std::endl;
       std::free(program_log);
@@ -334,6 +349,8 @@ GLint init_arbitrary_shader(ShaderConfig config) {
   // Check for load success here, easier to debug
   DOGL(glUseProgram(program_id));
 
+  use_shader(program_id);
+
   return program_id;
 }
 
@@ -363,23 +380,14 @@ int main(int argc, char *argv[]) {
   if (!init_glew())
     std::exit(-1);
   init_GL();
-
-  // glPatchParameteri(GL_PATCH_VERTICES, 3);
+  init_anim();
 
   surface_program_id = init_arbitrary_shader(ShaderConfig{
-      .vertex = "shaders/surface/vertex.shd",
-      .fragment = "shaders/surface/fragment.shd",
+      .vertex = "shaders/waves/vertex.shd",
+      .tesselation_control = "shaders/waves/tessellation_control.shd",
+      .tesselation_evaluation = "shaders/waves/tessellation_evaluation.shd",
+      .fragment = "shaders/waves/fragment.shd",
   });
-
-  hair_program_id = init_arbitrary_shader(ShaderConfig{
-      .vertex = "shaders/hair/vertex.shd",
-      // .tesselation_control = "shaders/hair/tesselation_control.shd",
-      // .tesselation_evaluation = "shaders/hair/tesselation_evaluation.shd",
-      .geometry = "shaders/hair/geometry.shd",
-      .fragment = "shaders/hair/fragment.shd",
-  });
-
-  compute_program_id = init_compute_shader("shaders/compute.shd");
 
   init_object_vbo();
 

@@ -1,0 +1,18 @@
+#version 450
+
+layout( location = 0 ) out vec4 output_color;
+
+in vec3 tesNormal;
+in vec3 tesPosition;
+
+vec3 light_color = vec3(1.0, 1.0, 1.0);
+vec3 light_position = vec3(-10.0, -10.0, -50.0);
+
+vec3 object_color = vec3(1.0, 1.0, 1.0);
+
+void main() {
+  vec3 light_dir = normalize(tesPosition - light_position);
+  float dln = dot(light_dir, tesNormal);
+  vec3 color = clamp(dln * light_color * object_color, 0., 1.);
+  output_color = vec4(color, 1);
+}
