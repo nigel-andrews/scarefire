@@ -13,19 +13,20 @@
   do {                                                                         \
     GLenum err = glGetError();                                                 \
     if (err != GL_NO_ERROR)                                                    \
-      std::cerr << "OpenGL ERROR! " << __LINE__ << std::endl;                  \
+      std::cerr << "OpenGL ERROR! " << __LINE__ << ": " << err << std::endl;   \
   } while (0)
 
 #define DOGL(...)                                                              \
-  {                                                                            \
+  do {                                                                         \
     __VA_ARGS__;                                                               \
     TEST_OPENGL_ERROR();                                                       \
-  }
+  } while (0)
 
 GLuint bunny_vao_id;
 
 GLuint hair_program_id;
 GLuint surface_program_id;
+GLuint compute_program_id;
 
 bool held = false;
 GLfloat offset[3] = {0, 0, -17};
@@ -85,6 +86,9 @@ void display() {
   use_shader(hair_program_id);
   render();
 
+  DOGL(glUseProgram(compute_program_id));
+  DOGL(glDispatchCompute(1, 1024, 1));
+
   glBindVertexArray(0);
   TEST_OPENGL_ERROR();
 
@@ -92,6 +96,8 @@ void display() {
 }
 
 void mouse_button_handler(int button, int state, int x, int y) {
+  (void)button;
+
   if (state == GLUT_DOWN) {
     pos[0] = x;
     pos[1] = y;
@@ -162,47 +168,40 @@ void init_object_vbo() {
   int index_vbo = 0;
   GLuint vbo_ids[max_nb_vbo];
 
-  GLint vertex_location = glGetAttribLocation(hair_program_id, "position");
-  TEST_OPENGL_ERROR();
-  GLint normal_smooth_location =
-      glGetAttribLocation(hair_program_id, "normalSmooth");
-  TEST_OPENGL_ERROR();
+  GLint vertex_location;
+  DOGL(vertex_location = glGetAttribLocation(hair_program_id, "position"));
+  GLint normal_smooth_location;
+  DOGL(normal_smooth_location =
+           glGetAttribLocation(hair_program_id, "normalSmooth"));
 
-  glGenVertexArrays(1, &bunny_vao_id);
-  TEST_OPENGL_ERROR();
-  glBindVertexArray(bunny_vao_id);
-  TEST_OPENGL_ERROR();
+  DOGL(glGenVertexArrays(1, &bunny_vao_id));
+  DOGL(glBindVertexArray(bunny_vao_id));
 
   if (vertex_location != -1)
     nb_vbo++;
   if (normal_smooth_location != -1)
     nb_vbo++;
-  glGenBuffers(nb_vbo, vbo_ids);
-  TEST_OPENGL_ERROR();
+  DOGL(glGenBuffers(nb_vbo, vbo_ids));
 
   if (vertex_location != -1) {
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_ids[index_vbo++]);
-    TEST_OPENGL_ERROR();
-    glBufferData(GL_ARRAY_BUFFER, vertex_buffer_data.size() * sizeof(float),
-                 vertex_buffer_data.data(), GL_STATIC_DRAW);
-    TEST_OPENGL_ERROR();
-    glVertexAttribPointer(vertex_location, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    TEST_OPENGL_ERROR();
-    glEnableVertexAttribArray(vertex_location);
-    TEST_OPENGL_ERROR();
+    DOGL(glBindBuffer(GL_ARRAY_BUFFER, vbo_ids[index_vbo++]));
+    DOGL(glBufferData(GL_ARRAY_BUFFER,
+                      vertex_buffer_data.size() * sizeof(float),
+                      vertex_buffer_data.data(), GL_STATIC_DRAW));
+    DOGL(glVertexAttribPointer(vertex_location, 3, GL_FLOAT, GL_FALSE, 0, 0));
+    DOGL(glEnableVertexAttribArray(vertex_location));
+    DOGL(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, vbo_ids[index_vbo - 1]));
   }
 
   if (normal_smooth_location != -1) {
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_ids[index_vbo++]);
-    TEST_OPENGL_ERROR();
-    glBufferData(GL_ARRAY_BUFFER,
-                 normal_smooth_buffer_data.size() * sizeof(float),
-                 normal_smooth_buffer_data.data(), GL_STATIC_DRAW);
-    TEST_OPENGL_ERROR();
-    glVertexAttribPointer(normal_smooth_location, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    TEST_OPENGL_ERROR();
-    glEnableVertexAttribArray(normal_smooth_location);
-    TEST_OPENGL_ERROR();
+    DOGL(glBindBuffer(GL_ARRAY_BUFFER, vbo_ids[index_vbo++]));
+    DOGL(glBufferData(GL_ARRAY_BUFFER,
+                      normal_smooth_buffer_data.size() * sizeof(float),
+                      normal_smooth_buffer_data.data(), GL_STATIC_DRAW));
+    DOGL(glVertexAttribPointer(normal_smooth_location, 3, GL_FLOAT, GL_FALSE, 0,
+                               0));
+    DOGL(glEnableVertexAttribArray(normal_smooth_location));
+    DOGL(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, vbo_ids[index_vbo - 1]));
   }
 
   glBindVertexArray(0);
@@ -226,7 +225,9 @@ std::string load(const std::string &filename) {
 
 struct ShaderConfig {
   std::string vertex;
-  std::optional<std::string> geometry;
+  std::optional<std::string> tesselation_control = {};
+  std::optional<std::string> tesselation_evaluation = {};
+  std::optional<std::string> geometry = {};
   std::string fragment;
 };
 
@@ -236,62 +237,40 @@ GLuint load_shader(std::string &path, int type) {
 
   std::string src = load(path);
   const char *c_src = src.c_str();
-  // char *shd_src = (char *)std::malloc(src.length() * sizeof(char));
-  // src.copy(shd_src, src.length());
 
   DOGL(glShaderSource(id, 1, &c_src, 0));
-
-  // std::free(shd_src);
 
   return id;
 }
 
-GLint init_arbitrary_shader(ShaderConfig config) {
-  GLint program_id;
-  std::vector<GLuint> shader_ids;
-
-  shader_ids.emplace_back(load_shader(config.vertex, GL_VERTEX_SHADER));
-
-  if (config.geometry.has_value())
-    shader_ids.emplace_back(
-        load_shader(config.geometry.value(), GL_GEOMETRY_SHADER));
-
-  shader_ids.emplace_back(load_shader(config.fragment, GL_FRAGMENT_SHADER));
-
+bool checked_compile_shader(GLuint shader_ids[], GLuint id) {
   GLint compile_status = GL_TRUE;
 
-  for (int i = 0; i < shader_ids.size(); i++) {
-    DOGL(glCompileShader(shader_ids[i]));
+  DOGL(glCompileShader(shader_ids[id]));
 
-    glGetShaderiv(shader_ids[i], GL_COMPILE_STATUS, &compile_status);
+  glGetShaderiv(shader_ids[id], GL_COMPILE_STATUS, &compile_status);
 
-    // Error
-    if (compile_status != GL_TRUE) {
-      GLint log_size;
-      char *shader_log;
+  // Error
+  if (compile_status != GL_TRUE) {
+    GLint log_size;
+    char *shader_log;
 
-      glGetShaderiv(shader_ids[i], GL_INFO_LOG_LENGTH, &log_size);
-      shader_log = (char *)std::malloc(log_size + 1);
-      if (shader_log) {
-        glGetShaderInfoLog(shader_ids[i], log_size, &log_size, shader_log);
-        std::cerr << "SHADER " << i << ": " << shader_log << std::endl;
-        std::free(shader_log);
-      }
-
-      for (int j = 0; j <= i; j++)
-        glDeleteShader(shader_ids[j]);
-
-      return -1;
+    glGetShaderiv(shader_ids[id], GL_INFO_LOG_LENGTH, &log_size);
+    shader_log = (char *)std::malloc(log_size + 1);
+    if (shader_log) {
+      glGetShaderInfoLog(shader_ids[id], log_size, &log_size, shader_log);
+      std::cerr << "SHADER " << id << ": " << shader_log << std::endl;
+      std::free(shader_log);
     }
+
+    for (size_t j = 0; j <= id; j++)
+      glDeleteShader(shader_ids[j]);
   }
 
-  DOGL(program_id = glCreateProgram());
-  if (!program_id)
-    return -1;
+  return compile_status == GL_TRUE;
+}
 
-  for (int i = 0; i < shader_ids.size(); i++)
-    DOGL(glAttachShader(program_id, shader_ids[i]));
-
+bool checked_link_program(GLuint program_id, std::vector<GLuint> &shader_ids) {
   DOGL(glLinkProgram(program_id));
 
   GLint link_status = GL_TRUE;
@@ -311,13 +290,69 @@ GLint init_arbitrary_shader(ShaderConfig config) {
     }
 
     DOGL(glDeleteProgram(program_id));
-    for (int i = 0; i < shader_ids.size(); i++)
+    for (size_t i = 0; i < shader_ids.size(); i++)
       DOGL(glDeleteShader(shader_ids[i]));
-
-    return -1;
   }
 
+  return link_status == GL_TRUE;
+}
+
+GLint init_arbitrary_shader(ShaderConfig config) {
+  GLint program_id;
+  std::vector<GLuint> shader_ids;
+
+  shader_ids.emplace_back(load_shader(config.vertex, GL_VERTEX_SHADER));
+
+  if (config.geometry.has_value())
+    shader_ids.emplace_back(
+        load_shader(config.geometry.value(), GL_GEOMETRY_SHADER));
+
+  if (config.tesselation_control.has_value())
+    shader_ids.emplace_back(load_shader(config.tesselation_control.value(),
+                                        GL_TESS_CONTROL_SHADER));
+
+  if (config.tesselation_evaluation.has_value())
+    shader_ids.emplace_back(load_shader(config.tesselation_evaluation.value(),
+                                        GL_TESS_EVALUATION_SHADER));
+
+  shader_ids.emplace_back(load_shader(config.fragment, GL_FRAGMENT_SHADER));
+
+  for (size_t i = 0; i < shader_ids.size(); i++)
+    if (!checked_compile_shader(shader_ids.data(), i))
+      return -1;
+
+  DOGL(program_id = glCreateProgram());
+  if (!program_id)
+    return -1;
+
+  for (size_t i = 0; i < shader_ids.size(); i++)
+    DOGL(glAttachShader(program_id, shader_ids[i]));
+
+  if (!checked_link_program(program_id, shader_ids))
+    return -1;
+
   // Check for load success here, easier to debug
+  DOGL(glUseProgram(program_id));
+
+  return program_id;
+}
+
+GLint init_compute_shader(std::string &&path) {
+  GLint program_id;
+
+  GLuint compute_shader_id = load_shader(path, GL_COMPUTE_SHADER);
+  std::vector<GLuint> shader_ids;
+  shader_ids.emplace_back(compute_shader_id);
+
+  DOGL(program_id = glCreateProgram());
+  if (!program_id)
+    return -1;
+
+  DOGL(glAttachShader(program_id, compute_shader_id));
+
+  if (!checked_link_program(program_id, shader_ids))
+    return -1;
+
   DOGL(glUseProgram(program_id));
 
   return program_id;
@@ -329,18 +364,24 @@ int main(int argc, char *argv[]) {
     std::exit(-1);
   init_GL();
 
+  // glPatchParameteri(GL_PATCH_VERTICES, 3);
+
   surface_program_id = init_arbitrary_shader(ShaderConfig{
       .vertex = "shaders/surface/vertex.shd",
-      .geometry = {},
       .fragment = "shaders/surface/fragment.shd",
   });
 
   hair_program_id = init_arbitrary_shader(ShaderConfig{
       .vertex = "shaders/hair/vertex.shd",
+      // .tesselation_control = "shaders/hair/tesselation_control.shd",
+      // .tesselation_evaluation = "shaders/hair/tesselation_evaluation.shd",
       .geometry = "shaders/hair/geometry.shd",
       .fragment = "shaders/hair/fragment.shd",
   });
 
+  compute_program_id = init_compute_shader("shaders/compute.shd");
+
   init_object_vbo();
+
   glutMainLoop();
 }
