@@ -4,9 +4,10 @@ layout( location = 0 ) out vec4 output_color;
 
 in vec3 tesNormal;
 in vec3 tesPosition;
+in vec3 tesColor;
 
 vec3 light_color = vec3(1.0, 1.0, 1.0);
-vec3 light_position = vec3(1, 1, 0);
+vec3 light_position = vec3(0, 1, 0);
 
 vec3 object_color = vec3(0.3, 0.3, 1.0);
 
@@ -19,7 +20,7 @@ void main() {
   float dln = dot(light_dir, tesNormal);
   vec3 diffuse = clamp(dln * (light_color / sq_dist) * object_color, 0., 1.);
 
-  vec3 specular = vec3(pow(dln, 2.));
+  vec3 specular = vec3(pow(dln, 20.));
 
-  output_color = vec4(diffuse/*  + specular */, 1);
+  output_color = vec4(diffuse + specular, 1.);
 }

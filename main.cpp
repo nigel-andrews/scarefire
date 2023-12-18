@@ -53,7 +53,7 @@ GLfloat model_view_matrix[16] = {
 GLfloat projection_matrix[16] = {
     15.0000, 0.00000, 0.00000, 0.00000, //
     0.00000, 15.0000, 0.00000, 0.00000, //
-    0.00000, 0.00000, -1.0002, -1.0000, //
+    0.00000, 0.00000, -1.0002, -2.0000, //
     0.00000, 0.00000, -5.001,  0.00000, //
 };
 
@@ -169,7 +169,7 @@ bool init_glew() {
 void init_GL() {
   DOGL(glEnable(GL_DEPTH_TEST));
   DOGL(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
-  DOGL(glEnable(GL_CULL_FACE));
+  // DOGL(glEnable(GL_CULL_FACE));
   DOGL(glClearColor(0.4, 0.4, 0.4, 1.0));
   DOGL(glPatchParameteri(GL_PATCH_VERTICES, 4));
 }

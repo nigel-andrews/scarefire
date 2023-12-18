@@ -5,7 +5,7 @@ layout( vertices = 4 ) out;
 in vec3 vNormal[];
 out vec3 tcsNormal[];
 
-const uint DETAIL = 32;
+const uint DETAIL = 128;
 
 void main() {
   gl_TessLevelOuter[0] = DETAIL;
