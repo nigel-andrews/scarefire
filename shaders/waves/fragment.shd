@@ -20,7 +20,8 @@ void main() {
   float dln = dot(light_dir, tesNormal);
   vec3 diffuse = clamp(dln * (light_color / sq_dist) * object_color, 0., 1.);
 
-  vec3 specular = vec3(pow(dln, 20.));
+  vec3 specular = vec3(pow(dln, 100.));
 
   output_color = vec4(diffuse + specular, 1.);
+  // output_color = vec4(tesColor, 1.);
 }
