@@ -7,12 +7,12 @@ in vec3 tesPosition;
 in vec3 tesColor;
 
 vec3 light_color = vec3(1.0, 1.0, 1.0);
-vec3 light_position = vec3(0, 1, 0);
+uniform vec3 light_pos;
 
 vec3 object_color = vec3(0.3, 0.3, 1.0);
 
 void main() {
-  vec3 light_ray = light_position - tesPosition;
+  vec3 light_ray = light_pos - tesPosition;
 
   float sq_dist = pow(length(light_ray), 2.);
 

@@ -1,3 +1,4 @@
+// clang-format off
 #include <GL/glew.h>
 
 #include <GL/freeglut.h>
@@ -8,7 +9,6 @@
 #include <vector>
 
 // #include "bunny.hh"
-// clang-format off
 static const std::vector<GLfloat> vertex_buffer_data {
   -0.5, 0.0, +0.5,
   +0.5, 0.0, +0.5,
@@ -37,10 +37,13 @@ static const std::vector<GLfloat> vertex_buffer_data {
 GLuint vao_id;
 GLuint surface_program_id;
 
-bool held = false;
+static bool held = false;
 GLfloat offset[3] = {0, 0, -5};
+static GLfloat light_position[3] = {0.0, 1.0, 0.0};
 GLint pos[2] = {0, 0};
-bool shift = false;
+GLfloat light_pos[3] = {0.0, 1.0, 0.0};
+static bool shift = false;
+static bool ctrl;
 
 float anim_time;
 
@@ -68,6 +71,10 @@ void use_shader(GLuint shader_id) {
   DOGL(proj_id = glGetUniformLocation(shader_id, "projection_matrix"));
   DOGL(glUniformMatrix4fv(proj_id, 1, GL_FALSE, projection_matrix));
 
+  GLuint light_pos_location;
+  DOGL(light_pos_location = glGetUniformLocation(shader_id, "light_pos"));
+  glUniform3fv(light_pos_location, 1, light_pos);
+
   GLuint anim_time_id;
   DOGL(anim_time_id = glGetUniformLocation(shader_id, "anim_time"));
   DOGL(glUniform1f(anim_time_id, anim_time));
@@ -82,6 +89,10 @@ void display() {
   model_view_matrix[4 * 3] = offset[0];
   model_view_matrix[4 * 3 + 1] = offset[1];
   model_view_matrix[4 * 3 + 2] = offset[2];
+
+  light_pos[0] = light_position[0];
+  light_pos[1] = light_position[1];
+  light_pos[2] = light_position[2];
 
   DOGL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
@@ -98,7 +109,7 @@ void anim() {
   glutPostRedisplay();
 }
 
-void timer(int value) {
+void timer(int) {
   anim();
   glutTimerFunc(33, timer, 0);
 }
@@ -115,7 +126,10 @@ void mouse_button_handler(int button, int state, int x, int y) {
     held = false;
   }
 
-  shift = glutGetModifiers() & GLUT_ACTIVE_SHIFT;
+  auto modifiers = glutGetModifiers();
+
+  shift = modifiers & GLUT_ACTIVE_SHIFT;
+  ctrl = modifiers & GLUT_ACTIVE_CTRL;
 }
 
 void mouse_motion_handler(int x, int y) {
@@ -125,11 +139,14 @@ void mouse_motion_handler(int x, int y) {
     held = true;
   }
 
-  if (!shift) {
+  if (shift) {
+    offset[2] += (pos[1] - y) / 100.;
+  } else if (ctrl) {
+    light_position[0] -= (pos[0] - x) / 1000.;
+    light_position[1] += (pos[1] - y) / 1000.;
+  } else {
     offset[0] -= (pos[0] - x) / 1000.;
     offset[1] += (pos[1] - y) / 1000.;
-  } else {
-    offset[2] += (pos[1] - y) / 100.;
   }
 
   pos[0] = x;
