@@ -34,69 +34,88 @@ static const std::vector<GLfloat> vertex_buffer_data {
 #define DBG(VAR)                                                               \
   std::cout << STR(VAR) "[" << __LINE__ << "]: " << VAR << std::endl;
 
-GLuint vao_id;
-GLuint surface_program_id;
+struct SceneData {
+  // Scene state
+  float anim_time;
 
-static bool held = false;
-GLfloat offset[3] = {0, 0, -5};
-static GLfloat light_position[3] = {0.0, 1.0, 0.0};
-GLint pos[2] = {0, 0};
-GLfloat light_pos[3] = {0.0, 1.0, 0.0};
-static bool shift = false;
-static bool ctrl;
+  // Lighting
+  GLfloat light_pos[3] = {0.0, 1.0, 0.0};
 
-float anim_time;
-
-GLfloat model_view_matrix[16] = {
-    0.577350, -0.3333, 0.57735, 0.00000, //
-    0.000000, 0.66667, 0.57735, 0.00000, //
-    -0.57735, -0.3333, 0.57735, 0.00000, //
-    0.000000, 0.00000, -17.000, 1.00000, //
+  // Camera
+  GLfloat model_view_matrix[16] = {
+      0.577350, -0.3333, 0.57735, 0.00000, //
+      0.000000, 0.66667, 0.57735, 0.00000, //
+      -0.57735, -0.3333, 0.57735, 0.00000, //
+      0.000000, 0.00000, -17.000, 1.00000, //
+  };
+  GLfloat projection_matrix[16] = {
+      15.0000, 0.00000, 0.00000, 0.00000, //
+      0.00000, 15.0000, 0.00000, 0.00000, //
+      0.00000, 0.00000, -1.0002, -2.0000, //
+      0.00000, 0.00000, -5.001,  0.00000, //
+  };
 };
-GLfloat projection_matrix[16] = {
-    15.0000, 0.00000, 0.00000, 0.00000, //
-    0.00000, 15.0000, 0.00000, 0.00000, //
-    0.00000, 0.00000, -1.0002, -2.0000, //
-    0.00000, 0.00000, -5.001,  0.00000, //
-};
+
+static struct ProgramState {
+  // OpenGL handles
+  GLuint vao_id;
+  GLuint surface_program_id;
+
+  // Mouse stuff
+  bool held = false;
+  bool shift = false;
+  bool ctrl = false;
+  GLfloat offset[3] = {0, 0, -5};
+
+  GLint pos[2] = {0, 0};
+
+  GLfloat light_pos[3] = {0.0, 1.0, 0.0};
+
+  // Scene info
+  struct SceneData scene;
+} _state;
+
+#define SET_UNIFORM(Program, Name, Init)                                       \
+  do {                                                                         \
+    GLint uniform_id;                                                          \
+    DOGL(uniform_id = glGetUniformLocation(Program, Name));                    \
+    if (uniform_id != -1)                                                      \
+      DOGL(Init);                                                              \
+    else                                                                       \
+      fprintf(stderr, "Trying to bind missing uniform" Name);                  \
+  } while (0);
 
 void use_shader(GLuint shader_id) {
   DOGL(glUseProgram(shader_id));
 
-  GLuint mvm_id;
-  DOGL(mvm_id = glGetUniformLocation(shader_id, "model_view_matrix"));
-  DOGL(glUniformMatrix4fv(mvm_id, 1, GL_FALSE, model_view_matrix));
+  SET_UNIFORM(shader_id, "model_view_matrix",
+              glUniformMatrix4fv(uniform_id, 1, GL_FALSE,
+                                 _state.scene.model_view_matrix));
 
-  GLuint proj_id;
-  DOGL(proj_id = glGetUniformLocation(shader_id, "projection_matrix"));
-  DOGL(glUniformMatrix4fv(proj_id, 1, GL_FALSE, projection_matrix));
+  SET_UNIFORM(shader_id, "projection_matrix",
+              glUniformMatrix4fv(uniform_id, 1, GL_FALSE,
+                                 _state.scene.projection_matrix));
 
-  GLuint light_pos_location;
-  DOGL(light_pos_location = glGetUniformLocation(shader_id, "light_pos"));
-  glUniform3fv(light_pos_location, 1, light_pos);
+  SET_UNIFORM(shader_id, "light_pos",
+              glUniform3fv(uniform_id, 1, _state.light_pos));
 
-  GLuint anim_time_id;
-  DOGL(anim_time_id = glGetUniformLocation(shader_id, "anim_time"));
-  DOGL(glUniform1f(anim_time_id, anim_time));
+  SET_UNIFORM(shader_id, "anim_time",
+              glUniform1f(uniform_id, _state.scene.anim_time));
 }
 
 void render() {
-  DOGL(glBindVertexArray(vao_id));
+  DOGL(glBindVertexArray(_state.vao_id));
   DOGL(glDrawArrays(GL_PATCHES, 0, 4));
 }
 
 void display() {
-  model_view_matrix[4 * 3] = offset[0];
-  model_view_matrix[4 * 3 + 1] = offset[1];
-  model_view_matrix[4 * 3 + 2] = offset[2];
-
-  light_pos[0] = light_position[0];
-  light_pos[1] = light_position[1];
-  light_pos[2] = light_position[2];
+  _state.scene.model_view_matrix[4 * 3] = _state.offset[0];
+  _state.scene.model_view_matrix[4 * 3 + 1] = _state.offset[1];
+  _state.scene.model_view_matrix[4 * 3 + 2] = _state.offset[2];
 
   DOGL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
-  use_shader(surface_program_id);
+  use_shader(_state.surface_program_id);
   render();
 
   DOGL(glBindVertexArray(0));
@@ -105,7 +124,7 @@ void display() {
 }
 
 void anim() {
-  anim_time += 0.1;
+  _state.scene.anim_time += 0.1;
   glutPostRedisplay();
 }
 
@@ -120,37 +139,37 @@ void mouse_button_handler(int button, int state, int x, int y) {
   (void)button;
 
   if (state == GLUT_DOWN) {
-    pos[0] = x;
-    pos[1] = y;
+    _state.pos[0] = x;
+    _state.pos[1] = y;
   } else {
-    held = false;
+    _state.held = false;
   }
 
   auto modifiers = glutGetModifiers();
 
-  shift = modifiers & GLUT_ACTIVE_SHIFT;
-  ctrl = modifiers & GLUT_ACTIVE_CTRL;
+  _state.shift = modifiers & GLUT_ACTIVE_SHIFT;
+  _state.ctrl = modifiers & GLUT_ACTIVE_CTRL;
 }
 
 void mouse_motion_handler(int x, int y) {
-  if (!held) {
-    pos[0] = x;
-    pos[1] = y;
-    held = true;
+  if (!_state.held) {
+    _state.pos[0] = x;
+    _state.pos[1] = y;
+    _state.held = true;
   }
 
-  if (shift) {
-    offset[2] += (pos[1] - y) / 100.;
-  } else if (ctrl) {
-    light_position[0] -= (pos[0] - x) / 1000.;
-    light_position[1] += (pos[1] - y) / 1000.;
+  if (_state.shift) {
+    _state.offset[2] += (_state.pos[1] - y) / 100.;
+  } else if (_state.ctrl) {
+    _state.light_pos[0] -= (_state.pos[0] - x) / 1000.;
+    _state.light_pos[1] += (_state.pos[1] - y) / 1000.;
   } else {
-    offset[0] -= (pos[0] - x) / 1000.;
-    offset[1] += (pos[1] - y) / 1000.;
+    _state.offset[0] -= (_state.pos[0] - x) / 1000.;
+    _state.offset[1] += (_state.pos[1] - y) / 1000.;
   }
 
-  pos[0] = x;
-  pos[1] = y;
+  _state.pos[0] = x;
+  _state.pos[1] = y;
 
   // Now done in anim
   // glutPostRedisplay();
@@ -198,12 +217,13 @@ void init_object_vbo() {
   GLuint vbo_ids[max_nb_vbo];
 
   GLint vertex_location;
-  DOGL(vertex_location = glGetAttribLocation(surface_program_id, "position"));
+  DOGL(vertex_location =
+           glGetAttribLocation(_state.surface_program_id, "position"));
   // GLint normal_smooth_location; DOGL(normal_smooth_location =
   //          glGetAttribLocation(hair_program_id, "normalSmooth"));
 
-  DOGL(glGenVertexArrays(1, &vao_id));
-  DOGL(glBindVertexArray(vao_id));
+  DOGL(glGenVertexArrays(1, &_state.vao_id));
+  DOGL(glBindVertexArray(_state.vao_id));
 
   if (vertex_location != -1)
     nb_vbo++;
@@ -404,7 +424,7 @@ int main(int argc, char *argv[]) {
   init_GL();
   init_anim();
 
-  surface_program_id = assert_not_neg1(
+  _state.surface_program_id = assert_not_neg1(
       init_arbitrary_shader(ShaderConfig{
           .vertex = "shaders/waves/vertex.shd",
           .tesselation_control = "shaders/waves/tessellation_control.shd",
