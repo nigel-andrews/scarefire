@@ -8,11 +8,14 @@
 
 CC = g++
 
-CPP_FILES = $(wildcard src/*.cpp)
+SRC_DIR = src
+BUILD_DIR = build
+
+CPP_FILES = $(wildcard $(SRC_DIR)/*.cpp)
 CPP_FILES +=
 HXX_FILES =
 HXX_FILES +=
-OBJ_FILES = $(CPP_FILES:.cpp=.o)
+OBJ_FILES = $(subst $(SRC_DIR),$(BUILD_DIR),$(CPP_FILES:.cpp=.o))
 
 CXX_FLAGS += -Wall -Wextra -O3 -g -std=c++23
 CXX_FLAGS +=
@@ -68,8 +71,8 @@ main-build: pre-build build
 build: $(OBJ_FILES)
 	$(CC) $(MAIN_FILE) -o $(DIST) $(OBJ_FILES) $(CXX_FLAGS) $(LDXX_FLAGS)
 
-
-%.o: %.cpp %.hh
+build/%.o: src/%.cpp src/%.hh
+	if [ ! -d build ]; then mkdir build; fi
 	@$(call color,2)
 	@echo "[$@] $(CXX_FLAGS)"
 	@$(call default_color)
