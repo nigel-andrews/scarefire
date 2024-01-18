@@ -29,7 +29,8 @@ public:
     float fov() const;
     float ratio() const;
 
-private:
+    void rotate(float angle, const glm::vec3& axis);
+
     void update();
 
     glm::mat4 _projection;

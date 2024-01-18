@@ -9,6 +9,7 @@ inline constexpr T to_rad(T deg)
 {
     return deg * T(0.01745329251994329576923690768489);
 }
+
 static bool is_proj_orthographic(const glm::mat4& proj)
 {
     return proj[3][3] == 1.0f;
@@ -146,4 +147,10 @@ float Camera::ratio() const
 void Camera::update()
 {
     _view_proj = _projection * _view;
+}
+
+void Camera::rotate(float angle, const glm::vec3& axis)
+{
+    this->_projection = glm::rotate(this->_projection, angle, axis);
+    update();
 }

@@ -1,7 +1,7 @@
 // clang-format off
-#include <cmath>
 #include <GL/glew.h>
 #include <glm/glm.hpp>
+#include <glm/ext.hpp>
 
 #include <GL/freeglut.h>
 #include <GL/glu.h>
@@ -32,11 +32,6 @@ static std::vector<GLfloat> vertex_buffer_data {0., 1., 2.};
 
 static struct ProgramState _state
 {};
-
-GLfloat dot(const GLfloat vec1[3], const GLfloat vec2[3])
-{
-    return vec1[0] * vec2[0] + vec1[1] * vec2[1] + vec1[2] * vec2[2];
-}
 
 void display()
 {
@@ -77,23 +72,12 @@ void init_anim()
 void input_handler(unsigned char key, int, int)
 {
     if (key == 'a')
-    {
-        auto lat = _state.look_at_target;
-        GLfloat right[3] = { 1, 0, 0 };
-        auto angle =
-            std::acos(dot(right, lat) / (dot(lat, lat) * dot(right, right)));
-
-        angle += 0.5;
-
-        _state.look_at_target[0] = std::cos(angle);
-        _state.look_at_target[2] = std::sin(angle);
-    }
+        _state.scene.camera.rotate(0.1, { 0, 1, 0 });
     else if (key == 'd')
-    {
-    }
+        _state.scene.camera.rotate(-0.1, { 0, 1, 0 });
     else
     {
-        std::cout << "rust > rien\n";
+        std::cout << "rust < tout\n";
     }
 }
 
@@ -232,23 +216,27 @@ Collection init_logs()
             DOGL(glDrawArrays(GL_PATCHES, 0, 4));
         });
 
-    res.set_uniform =
-        std::function<void(const Collection&)>([](const Collection&) {
-            // auto shader_id = collection.program_id;
+    res.set_uniform = std::function<void(const Collection&)>(
+        [](const Collection& collection) {
+            auto shader_id = collection.program_id;
 
-            // SET_UNIFORM(shader_id, "model_view_matrix",
-            //             glUniformMatrix4fv(uniform_id, 1, GL_FALSE,
-            //                                _state.scene.camera._view));
+            SET_UNIFORM(
+                shader_id, "model_view_matrix",
+                glUniformMatrix4fv(uniform_id, 1, GL_FALSE,
+                                   (const float*)&_state.scene.camera._view));
 
-            // SET_UNIFORM(shader_id, "projection_matrix",
-            //             glUniformMatrix4fv(uniform_id, 1, GL_FALSE,
-            //                                _state.scene.camera._projection));
+            SET_UNIFORM(shader_id, "projection_matrix",
+                        glUniformMatrix4fv(
+                            uniform_id, 1, GL_FALSE,
+                            (const float*)&_state.scene.camera._projection));
 
-            // SET_UNIFORM(shader_id, "anim_time",
-            //             glUniform1f(uniform_id, _state.scene.anim_time));
+#ifdef DEBUG
+            SET_UNIFORM(shader_id, "anim_time",
+                        glUniform1f(uniform_id, _state.scene.anim_time));
+#endif
 
-            // SET_UNIFORM(shader_id, "light_pos",
-            //             glUniform3fv(uniform_id, 1, _state.light_pos));
+            SET_UNIFORM(shader_id, "light_pos",
+                        glUniform3fv(uniform_id, 1, _state.light_pos));
         });
 
     return res;
