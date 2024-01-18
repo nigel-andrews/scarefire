@@ -2,3 +2,4 @@ bunny.hh
 main
 build/
 compile_*
+.cache
