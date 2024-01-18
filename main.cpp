@@ -12,14 +12,7 @@
 #include "src/state.hh"
 #include "src/utils.hh"
 
-static std::vector<GLfloat> vertex_buffer_data {
-  -0.5, 0.0, +0.5,
-  +0.5, 0.0, +0.5,
-  +0.5, 0.0, -0.5,
-  +0.5, 0.0, -0.5,
-  -0.5, 0.0, -0.5,
-  -0.5, 0.0, +0.5,
-};
+static std::vector<GLfloat> vertex_buffer_data {0., 1., 2.};
 // clang-format on
 
 static struct ProgramState _state
@@ -139,13 +132,16 @@ void init_GL()
     DOGL(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
     // DOGL(glEnable(GL_CULL_FACE));
     DOGL(glClearColor(0.4, 0.4, 0.4, 1.0));
-    DOGL(glPatchParameteri(GL_PATCH_VERTICES, 4));
+    DOGL(glPatchParameteri(GL_PATCH_VERTICES, 2));
 }
 
 Collection init_logs()
 {
     auto log_shader = ShaderConfig{
         .vertex = "shaders/log/vertex.glsl",
+        .tesselation_control = "shaders/log/tcs.glsl",
+        .tesselation_evaluation = "shaders/log/tes.glsl",
+        .geometry = "shaders/log/geometry.glsl",
         .fragment = "shaders/log/fragment.glsl",
     };
 
@@ -169,8 +165,7 @@ Collection init_logs()
     res.render = std::function<void(const Collection&)>(
         [](const Collection& collection) {
             DOGL(glBindVertexArray(collection.vao_id));
-            DOGL(glDrawArrays(GL_TRIANGLES, 0,
-                              collection.mesh_.vertices.size()));
+            DOGL(glDrawArrays(GL_PATCHES, 0, collection.mesh_.vertices.size()));
         });
 
     res.set_uniform = std::function<void(const Collection&)>(
@@ -184,9 +179,9 @@ Collection init_logs()
             SET_UNIFORM(shader_id, "projection_matrix",
                         glUniformMatrix4fv(uniform_id, 1, GL_FALSE,
                                            _state.scene.projection_matrix));
-
-            SET_UNIFORM(shader_id, "light_pos",
-                        glUniform3fv(uniform_id, 1, _state.light_pos));
+            //
+            // SET_UNIFORM(shader_id, "light_pos",
+            //             glUniform3fv(uniform_id, 1, _state.light_pos));
         });
 
     return res;
