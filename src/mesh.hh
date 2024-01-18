@@ -4,7 +4,8 @@
 #include <optional>
 #include <vector>
 
-struct MeshData {
-  std::vector<GLfloat> vertices;
-  std::optional<std::vector<GLfloat>> normals;
+struct MeshData
+{
+    std::vector<GLfloat> vertices;
+    std::optional<std::vector<GLfloat>> normals;
 };

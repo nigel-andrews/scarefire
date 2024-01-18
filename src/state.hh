@@ -4,17 +4,18 @@
 
 #include "scene.hh"
 
-struct ProgramState {
-  // Mouse stuff
-  bool held = false;
-  bool shift = false;
-  bool ctrl = false;
-  GLfloat offset[3] = {0, 0, -5};
+struct ProgramState
+{
+    // Mouse stuff
+    bool held = false;
+    bool shift = false;
+    bool ctrl = false;
+    GLfloat offset[3] = { 0, 0, -5 };
 
-  GLint pos[2] = {0, 0};
+    GLint pos[2] = { 0, 0 };
 
-  GLfloat light_pos[3] = {0.0, 1.0, 0.0};
+    GLfloat light_pos[3] = { 0.0, 1.0, 0.0 };
 
-  // Scene info
-  struct Scene scene;
+    // Scene info
+    struct Scene scene;
 };
