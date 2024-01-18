@@ -17,6 +17,7 @@ static std::vector<GLfloat> vertex_buffer_data {
   +0.5, 0.0, +0.5,
   +0.5, 0.0, -0.5,
   -0.5, 0.0, -0.5,
+  -0.5, 0.0, +0.5,
 };
 // clang-format on
 
@@ -176,7 +177,7 @@ int main(int argc, char* argv[])
         std::function<void(const Collection&)>(
             [](const Collection& collection) {
                 DOGL(glBindVertexArray(collection.vao_id));
-                DOGL(glDrawArrays(GL_TRIANGLES, 0,
+                DOGL(glDrawArrays(GL_TRIANGLE_STRIP, 0,
                                   collection.mesh_.vertices.size()));
             });
 

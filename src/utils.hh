@@ -34,9 +34,7 @@ template <int N>
 class Mat
 {
 public:
-    Mat()
-        : data_(new GLfloat[N * N])
-    {}
+    Mat() = default;
 
     Mat(const std::initializer_list<GLfloat>& values)
     {
@@ -51,14 +49,7 @@ public:
     Mat(const Mat& rhs)
     {
         for (auto i = 0; i < N * N; i++)
-        {
             this->data_[i] = rhs.data_[i];
-        }
-    }
-
-    ~Mat()
-    {
-        delete[] this->data_;
     }
 
     GLfloat& operator()(int i, int j)
