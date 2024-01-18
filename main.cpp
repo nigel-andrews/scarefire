@@ -15,6 +15,7 @@
 #include "src/utils.hh"
 
 #define DEBUG
+#undef DEBUG
 
 #ifdef DEBUG
 static std::vector<GLfloat> vertex_buffer_data {
@@ -134,6 +135,7 @@ void mouse_motion_handler(int x, int y)
 
 void window_resize(int width, int height)
 {
+    _state.scene.camera.set_ratio(float(width) / float(height));
     DOGL(glViewport(0, 0, width, height));
 }
 
