@@ -133,6 +133,26 @@ bool init_glew()
     return true;
 }
 
+void GLAPIENTRY error_callback(GLenum source, GLenum type, GLuint id,
+                               GLenum severity, GLsizei length,
+                               const GLchar* message, const void* userParam)
+{
+    auto severity_str = GL_DEBUG_SEVERITY_HIGH ? "HIGH"
+        : GL_DEBUG_SEVERITY_MEDIUM             ? "MEDIUM"
+        : GL_DEBUG_SEVERITY_LOW                ? "LOW"
+                                               : "NOTIF";
+
+    auto type_str = GL_DEBUG_TYPE_ERROR     ? "ERROR"
+        : GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR ? "DEPRECATED"
+        : GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR  ? "UNDEFINED"
+        : GL_DEBUG_TYPE_PORTABILITY         ? "PORTABILITY"
+        : GL_DEBUG_TYPE_PERFORMANCE         ? "PERFORMANCE"
+        : GL_DEBUG_TYPE_MARKER              ? "MARKER"
+                                            : "OTHER";
+
+    fprintf(stderr, "[GL][%s](%s): %s\n", severity_str, type_str, message);
+}
+
 void init_GL()
 {
     DOGL(glEnable(GL_DEPTH_TEST));
@@ -140,6 +160,8 @@ void init_GL()
     // DOGL(glEnable(GL_CULL_FACE));
     DOGL(glClearColor(0.4, 0.4, 0.4, 1.0));
     DOGL(glPatchParameteri(GL_PATCH_VERTICES, 4));
+    DOGL(glEnable(GL_DEBUG_OUTPUT));
+    DOGL(glDebugMessageCallback(error_callback, 0));
 }
 
 Collection init_logs()
