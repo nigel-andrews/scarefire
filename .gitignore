@@ -1,2 +1,4 @@
 bunny.hh
 main
+build/
+compile_*
