@@ -3,10 +3,12 @@
 
 #include <GL/freeglut.h>
 #include <GL/glu.h>
+#include <cmath>
 #include <functional>
 #include <iostream>
 #include <vector>
 
+#include "src/mesh.hh"
 #include "src/state.hh"
 
 static const std::vector<GLfloat> vertex_buffer_data {
@@ -137,15 +139,20 @@ int main(int argc, char *argv[]) {
   init_GL();
   init_anim();
 
-  // _state.log_program_id = assert_not_neg1(
-  //     init_arbitrary_shader(ShaderConfig{
-  //         .vertex = "shaders/log/vertex.shd",
-  //         // .tesselation_control = "shaders/waves/tessellation_control.shd",
-  //         // .tesselation_evaluation =
-  //         // "shaders/waves/tessellation_evaluation.shd",
-  //         .fragment = "shaders/log/fragment.shd",
-  //     }),
-  //     "Invalid shader");
+  auto log_shader = ShaderConfig{
+      .vertex = "shaders/log/vertex.shd",
+      // .tesselation_control = "shaders/waves/tessellation_control.shd",
+      // .tesselation_evaluation =
+      // "shaders/waves/tessellation_evaluation.shd",
+      .fragment = "shaders/log/fragment.shd",
+  };
+
+  MeshData mesh{};
+  for (size_t i = 0; i < 10; i++) {
+    for (size_t theta = 0; theta < 360; theta += 30) {
+      // Generate cylinder vertices
+    }
+  }
 
   // _state.scene.collections
 

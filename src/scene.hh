@@ -4,7 +4,7 @@
 
 #include "collection.hh"
 
-struct SceneData {
+struct Scene {
   // Object collections
   std::vector<struct Collection> collections;
 
@@ -27,4 +27,7 @@ struct SceneData {
       0.00000, 0.00000, -1.0002, -2.0000, //
       0.00000, 0.00000, -5.001,  0.00000, //
   };
+
+  // Methods
+  void render() const;
 };

@@ -16,5 +16,5 @@ struct ProgramState {
   GLfloat light_pos[3] = {0.0, 1.0, 0.0};
 
   // Scene info
-  struct SceneData scene;
+  struct Scene scene;
 };
