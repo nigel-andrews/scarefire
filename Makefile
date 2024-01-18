@@ -9,13 +9,13 @@
 CC = g++
 
 SRC_DIR = src
-BUILD_DIR = build
+OBJ_DIR = build
 
 CPP_FILES = $(wildcard $(SRC_DIR)/*.cpp)
 CPP_FILES +=
 HXX_FILES =
 HXX_FILES +=
-OBJ_FILES = $(subst $(SRC_DIR),$(BUILD_DIR),$(CPP_FILES:.cpp=.o))
+OBJ_FILES = $(subst $(SRC_DIR),$(OBJ_DIR),$(CPP_FILES:.cpp=.o))
 
 CXX_FLAGS += -Wall -Wextra -O3 -g -std=c++23
 CXX_FLAGS +=
@@ -56,6 +56,7 @@ all: post-build
 pre-build:
 	@$(call color,4)
 	@echo "******** Starting Compilation ************"
+	@if [ ! -d build ]; then mkdir build; fi
 	@$(call default_color)
 
 post-build:
@@ -72,7 +73,6 @@ build: $(OBJ_FILES)
 	$(CC) $(MAIN_FILE) -o $(DIST) $(OBJ_FILES) $(CXX_FLAGS) $(LDXX_FLAGS)
 
 build/%.o: src/%.cpp src/%.hh
-	if [ ! -d build ]; then mkdir build; fi
 	@$(call color,2)
 	@echo "[$@] $(CXX_FLAGS)"
 	@$(call default_color)
@@ -92,7 +92,7 @@ build/%.o: src/%.cpp src/%.hh
 .PHONY: all clean pre-build post-build main-build build skel
 
 clean:
-	rm -f $(OBJ_FILES)
+	rm -rf $(OBJ_DIR)
 	rm -f $(DIST)
 	rm -rf $(SKEL_DIST_DIR).tar.bz2
 
