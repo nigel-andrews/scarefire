@@ -8,9 +8,9 @@
 
 CC = g++
 
-CPP_FILES =
+CPP_FILES = $(wildcard src/*.cpp)
 CPP_FILES +=
-HXX_FILES = bunny.hh
+HXX_FILES =
 HXX_FILES +=
 OBJ_FILES = $(CPP_FILES:.cpp=.o)
 
