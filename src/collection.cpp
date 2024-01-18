@@ -5,7 +5,9 @@
 #include "shader.hh"
 #include "utils.hh"
 
-Collection::Collection(MeshData mesh, struct ShaderConfig shader) {
+Collection::Collection(MeshData mesh, struct ShaderConfig shader,
+                       std::vector<Mat4> transforms)
+    : transforms(std::move(transforms)) {
   this->program_id = assert_not_neg1(init_arbitrary_shader(shader),
                                      "Failed to initialize shader");
 

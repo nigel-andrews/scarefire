@@ -27,7 +27,7 @@ struct Collection {
   };
 
   // Methods
-  Collection(MeshData mesh, ShaderConfig shader);
+  Collection(MeshData mesh, ShaderConfig shader, std::vector<Mat4> transforms);
 
   //! ================================= END =================================
   //! Anything below this is kept in case we have enough time to complete it.
