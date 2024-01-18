@@ -2,7 +2,12 @@
 
 #include <GL/glew.h>
 
+#include "collection.hh"
+
 struct SceneData {
+  // Object collections
+  std::vector<struct Collection> collections;
+
   // Scene state
   float anim_time;
 

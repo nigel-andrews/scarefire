@@ -7,7 +7,6 @@
 #include <iostream>
 #include <vector>
 
-#include "state.hh"
 #include "utils.hh"
 
 GLuint load_shader(std::string &path, int type) {

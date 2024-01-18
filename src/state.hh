@@ -1,15 +1,10 @@
 #pragma once
 
 #include <GL/glew.h>
-#include <vector>
 
-#include "collection.hh"
 #include "scene.hh"
 
 struct ProgramState {
-  // OpenGL handles
-  std::vector<struct Collection> collections;
-
   // Mouse stuff
   bool held = false;
   bool shift = false;

@@ -21,7 +21,7 @@ static struct ProgramState _state {};
 
 void render() {
   // TODO: Implement render for log collection
-  for (const auto &collection : _state.collections)
+  for (const auto &collection : _state.scene.collections)
     collection.render();
   // DOGL(glBindVertexArray(collection.vao_id));
   // DOGL(glDrawArrays(GL_PATCHES, 0, 4));
@@ -130,21 +130,6 @@ void init_GL() {
   DOGL(glPatchParameteri(GL_PATCH_VERTICES, 4));
 }
 
-void init_object_vbo() {
-  // if (normal_smooth_location != -1) {
-  //   DOGL(glBindBuffer(GL_ARRAY_BUFFER, vbo_ids[index_vbo++]));
-  //   DOGL(glBufferData(GL_ARRAY_BUFFER,
-  //                     normal_smooth_buffer_data.size() * sizeof(float),
-  //                     normal_smooth_buffer_data.data(), GL_STATIC_DRAW));
-  //   DOGL(glVertexAttribPointer(normal_smooth_location, 3, GL_FLOAT, GL_FALSE,
-  //   0,
-  //                              0));
-  //   DOGL(glEnableVertexAttribArray(normal_smooth_location));
-  //   DOGL(glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, vbo_ids[index_vbo -
-  //   1]));
-  // }
-}
-
 int main(int argc, char *argv[]) {
   init_glut(argc, argv);
   if (!init_glew())
@@ -162,7 +147,7 @@ int main(int argc, char *argv[]) {
   //     }),
   //     "Invalid shader");
 
-  init_object_vbo();
+  // _state.scene.collections
 
   glutMainLoop();
 }
