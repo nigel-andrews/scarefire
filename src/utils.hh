@@ -2,7 +2,6 @@
 
 #include <GL/glew.h>
 #include <assert.h>
-#include <exception>
 #include <initializer_list>
 #include <string>
 
@@ -71,6 +70,11 @@ public:
     const GLfloat& operator()(int i, int j) const
     {
         return this->data_[j * N + i];
+    }
+
+    operator const GLfloat*()
+    {
+        return this->data_;
     }
 
 private:

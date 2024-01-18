@@ -17,12 +17,12 @@ HXX_FILES =
 HXX_FILES +=
 OBJ_FILES = $(subst $(SRC_DIR),$(OBJ_DIR),$(CPP_FILES:.cpp=.o))
 
-CXX_FLAGS += -Wall -Wextra -O3 -g -std=c++23
+CXX_FLAGS += -Wall -Wextra -O3 -g -std=c++23 -fsanitize=address
 CXX_FLAGS +=
 CXX_FLAGS += -m64 -march=native
 CXX_FLAGS += -fopt-info-vec-optimized #-fopt-info-vec-missed -ftree-vectorize
 #CXX_FLAGS += -I/home/jonathan/work/enseignement/matieres/synthese/prog/opengl/compute_shader/jf_gl_tools/build_head/src
-LDXX_FLAGS = -lGL  -lGLEW -lglut -lpthread -lstdc++_libbacktrace
+LDXX_FLAGS = -lGL  -lGLEW -lglut -lpthread -lstdc++_libbacktrace -fsanitize=address
 #LDXX_FLAGS += /home/jonathan/work/enseignement/matieres/synthese/prog/opengl/compute_shader/jf_gl_tools/dist_lib/libjfglt.a
 
 MAIN_FILE = main.cpp

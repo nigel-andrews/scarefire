@@ -12,7 +12,7 @@
 #include "src/state.hh"
 #include "src/utils.hh"
 
-static const std::vector<GLfloat> vertex_buffer_data {
+static std::vector<GLfloat> vertex_buffer_data {
   -0.5, 0.0, +0.5,
   +0.5, 0.0, +0.5,
   +0.5, 0.0, -0.5,
@@ -23,30 +23,13 @@ static const std::vector<GLfloat> vertex_buffer_data {
 static struct ProgramState _state
 {};
 
-void render()
-{
-    // TODO: Implement render for log collection
-    for (const auto& collection : _state.scene.collections)
-        collection.render();
-    // DOGL(glBindVertexArray(collection.vao_id));
-    // DOGL(glDrawArrays(GL_PATCHES, 0, 4));
-    // DOGL(glDrawArrays(GL_PATCHES, 0, 4));
-}
-
 void display()
 {
-    _state.scene.model_view_matrix[4 * 3] = _state.offset[0];
-    _state.scene.model_view_matrix[4 * 3 + 1] = _state.offset[1];
-    _state.scene.model_view_matrix[4 * 3 + 2] = _state.offset[2];
+    // _state.scene.model_view_matrix(3, 0) = _state.offset[0];
+    // _state.scene.model_view_matrix(3, 1) = _state.offset[1];
+    // _state.scene.model_view_matrix(3, 2) = _state.offset[2];
 
-    DOGL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-
-    // use_shader(_state.log_program_id);
-    render();
-
-    DOGL(glBindVertexArray(0));
-
-    glutSwapBuffers();
+    _state.scene.render();
 }
 
 void anim()
@@ -166,30 +149,53 @@ int main(int argc, char* argv[])
     init_anim();
 
     auto log_shader = ShaderConfig{
-        .vertex = "shaders/log/vertex.shd",
-        .fragment = "shaders/log/fragment.shd",
+        .vertex = "shaders/log/vertex.glsl",
+        .fragment = "shaders/log/fragment.glsl",
     };
 
-    auto fire_shader = ShaderConfig{ .vertex = "", .fragment = "" };
+    // auto fire_shader = ShaderConfig{ .vertex = "", .fragment = "" };
 
-    MeshData mesh{};
-    for (size_t i = 0; i < 10; i++)
-    {
-        for (size_t theta = 0; theta < 360; theta += 30)
-        {
-            // Generate cylinder vertices
-        }
-    }
+    MeshData mesh;
+
+    mesh.vertices = vertex_buffer_data;
+    // for (size_t i = 0; i < 10; i++)
+    // {
+    //     for (size_t theta = 0; theta < 360; theta += 30)
+    //     {
+    //
+    //     }
+    // }
 
     std::vector<Mat<4>> transforms;
     transforms.emplace_back(std::initializer_list<GLfloat>{
-        1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 });
+        1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1. });
 
-    // FIXME: Weird, unclear C++ bug on transforms arg :(
     _state.scene.collections.emplace_back(mesh, log_shader,
                                           std::move(transforms));
+    _state.scene.collections.back().render =
+        std::function<void(const Collection&)>(
+            [](const Collection& collection) {
+                DOGL(glBindVertexArray(collection.vao_id));
+                DOGL(glDrawArrays(GL_TRIANGLES, 0,
+                                  collection.mesh_.vertices.size()));
+            });
 
-    // _state.scene.collections
+    _state.scene.collections.back().set_uniform =
+        std::function<void(const Collection&)>(
+            [](const Collection& collection) {
+                auto shader_id = collection.program_id;
+
+                SET_UNIFORM(shader_id, "model_view_matrix",
+                            glUniformMatrix4fv(uniform_id, 1, GL_FALSE,
+                                               _state.scene.model_view_matrix));
+
+                SET_UNIFORM(shader_id, "projection_matrix",
+                            glUniformMatrix4fv(uniform_id, 1, GL_FALSE,
+                                               _state.scene.projection_matrix));
+
+                SET_UNIFORM(shader_id, "light_pos",
+                            glUniform3fv(uniform_id, 1, _state.light_pos));
+            });
 
     glutMainLoop();
 }

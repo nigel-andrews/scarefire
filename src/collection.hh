@@ -14,16 +14,18 @@ struct Collection
     // Shared
     GLuint vao_id;
     GLuint program_id;
+    MeshData mesh_;
+    ShaderConfig shaders_;
 
     // Individual
     std::vector<Mat<4>> transforms;
 
     // Aggregate
-    const std::function<void()> render = []() {
+    std::function<void(const Collection&)> render = [](const Collection&) {
         throw std::runtime_error("[C++][FATAL] Unimplemented render().\n");
     };
 
-    const std::function<void()> set_uniform = []() {
+    std::function<void(const Collection&)> set_uniform = [](const Collection&) {
         throw std::runtime_error("[C++][FATAL] Unimplemented set_uniform().\n");
     };
 
