@@ -3,6 +3,7 @@
 #include <GL/glew.h>
 #include <assert.h>
 #include <initializer_list>
+#include <iostream>
 #include <string>
 
 #define TEST_OPENGL_ERROR()                                                    \

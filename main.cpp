@@ -2,12 +2,12 @@
 #include <GL/glew.h>
 
 #include <GL/freeglut.h>
-#include <memory>
 #include <GL/glu.h>
 #include <functional>
 #include <iostream>
 #include <vector>
 
+#include "src/collection.hh"
 #include "src/mesh.hh"
 #include "src/state.hh"
 #include "src/utils.hh"
@@ -15,6 +15,7 @@
 static std::vector<GLfloat> vertex_buffer_data {
   -0.5, 0.0, +0.5,
   +0.5, 0.0, +0.5,
+  +0.5, 0.0, -0.5,
   +0.5, 0.0, -0.5,
   -0.5, 0.0, -0.5,
   -0.5, 0.0, +0.5,
@@ -141,20 +142,12 @@ void init_GL()
     DOGL(glPatchParameteri(GL_PATCH_VERTICES, 4));
 }
 
-int main(int argc, char* argv[])
+Collection init_logs()
 {
-    init_glut(argc, argv);
-    if (!init_glew())
-        std::exit(-1);
-    init_GL();
-    init_anim();
-
     auto log_shader = ShaderConfig{
         .vertex = "shaders/log/vertex.glsl",
         .fragment = "shaders/log/fragment.glsl",
     };
-
-    // auto fire_shader = ShaderConfig{ .vertex = "", .fragment = "" };
 
     MeshData mesh;
 
@@ -171,32 +164,43 @@ int main(int argc, char* argv[])
     transforms.emplace_back(std::initializer_list<GLfloat>{
         1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1. });
 
-    _state.scene.collections.emplace_back(mesh, log_shader,
-                                          std::move(transforms));
-    _state.scene.collections.back().render =
-        std::function<void(const Collection&)>(
-            [](const Collection& collection) {
-                DOGL(glBindVertexArray(collection.vao_id));
-                DOGL(glDrawArrays(GL_TRIANGLE_STRIP, 0,
-                                  collection.mesh_.vertices.size()));
-            });
+    Collection res(mesh, log_shader, std::move(transforms));
 
-    _state.scene.collections.back().set_uniform =
-        std::function<void(const Collection&)>(
-            [](const Collection& collection) {
-                auto shader_id = collection.program_id;
+    res.render = std::function<void(const Collection&)>(
+        [](const Collection& collection) {
+            DOGL(glBindVertexArray(collection.vao_id));
+            DOGL(glDrawArrays(GL_TRIANGLES, 0,
+                              collection.mesh_.vertices.size()));
+        });
 
-                SET_UNIFORM(shader_id, "model_view_matrix",
-                            glUniformMatrix4fv(uniform_id, 1, GL_FALSE,
-                                               _state.scene.model_view_matrix));
+    res.set_uniform = std::function<void(const Collection&)>(
+        [](const Collection& collection) {
+            auto shader_id = collection.program_id;
 
-                SET_UNIFORM(shader_id, "projection_matrix",
-                            glUniformMatrix4fv(uniform_id, 1, GL_FALSE,
-                                               _state.scene.projection_matrix));
+            SET_UNIFORM(shader_id, "model_view_matrix",
+                        glUniformMatrix4fv(uniform_id, 1, GL_FALSE,
+                                           _state.scene.model_view_matrix));
 
-                SET_UNIFORM(shader_id, "light_pos",
-                            glUniform3fv(uniform_id, 1, _state.light_pos));
-            });
+            SET_UNIFORM(shader_id, "projection_matrix",
+                        glUniformMatrix4fv(uniform_id, 1, GL_FALSE,
+                                           _state.scene.projection_matrix));
+
+            SET_UNIFORM(shader_id, "light_pos",
+                        glUniform3fv(uniform_id, 1, _state.light_pos));
+        });
+
+    return res;
+}
+
+int main(int argc, char* argv[])
+{
+    init_glut(argc, argv);
+    if (!init_glew())
+        std::exit(-1);
+    init_GL();
+    init_anim();
+
+    _state.scene.collections.emplace_back(init_logs());
 
     glutMainLoop();
 }

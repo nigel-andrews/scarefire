@@ -1,7 +1,6 @@
 #include "scene.hh"
 
 #include <GL/glut.h>
-#include <iostream>
 
 void Scene::render() const
 {
