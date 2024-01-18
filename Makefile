@@ -8,6 +8,8 @@
 
 CC = g++
 
+CPPFLAGS = -Iglm
+
 SRC_DIR = src
 OBJ_DIR = build
 
@@ -70,13 +72,13 @@ post-build:
 main-build: pre-build build
 
 build: $(OBJ_FILES)
-	$(CC) $(MAIN_FILE) -o $(DIST) $(OBJ_FILES) $(CXX_FLAGS) $(LDXX_FLAGS)
+	$(CC) $(CPPFLAGS) $(MAIN_FILE) -o $(DIST) $(OBJ_FILES) $(CXX_FLAGS) $(LDXX_FLAGS)
 
 build/%.o: src/%.cpp src/%.hh
 	@$(call color,2)
 	@echo "[$@] $(CXX_FLAGS)"
 	@$(call default_color)
-	@$(CC) -c -o $@ $< $(CXX_FLAGS) ; \
+	@$(CC) $(CPPFLAGS) -c -o $@ $< $(CXX_FLAGS) ; \
 	sta=$$?;	  \
 	if [ $$sta -eq 0 ]; then  \
 	  $(call color,2) ; \

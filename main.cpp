@@ -1,5 +1,7 @@
 // clang-format off
+#include <cmath>
 #include <GL/glew.h>
+#include "glm/glm.hpp"
 
 #include <GL/freeglut.h>
 #include <GL/glu.h>
@@ -30,6 +32,11 @@ static std::vector<GLfloat> vertex_buffer_data {0., 1., 2.};
 
 static struct ProgramState _state
 {};
+
+GLfloat dot(const GLfloat vec1[3], const GLfloat vec2[3])
+{
+    return vec1[0] * vec2[0] + vec1[1] * vec2[1] + vec1[2] * vec2[2];
+}
 
 void display()
 {
@@ -65,6 +72,29 @@ void timer(int)
 void init_anim()
 {
     glutTimerFunc(33, timer, 0);
+}
+
+void input_handler(unsigned char key, int, int)
+{
+    if (key == 'a')
+    {
+        auto lat = _state.look_at_target;
+        GLfloat right[3] = { 1, 0, 0 };
+        auto angle =
+            std::acos(dot(right, lat) / (dot(lat, lat) * dot(right, right)));
+
+        angle += 0.5;
+
+        _state.look_at_target[0] = std::cos(angle);
+        _state.look_at_target[2] = std::sin(angle);
+    }
+    else if (key == 'd')
+    {
+    }
+    else
+    {
+        std::cout << "rust > rien\n";
+    }
 }
 
 void mouse_button_handler(int button, int state, int x, int y)
@@ -137,6 +167,7 @@ void init_glut(int& argc, char* argv[])
     glutReshapeFunc(window_resize);
     glutMouseFunc(mouse_button_handler);
     glutMotionFunc(mouse_motion_handler);
+    glutKeyboardFunc(input_handler);
 }
 
 bool init_glew()
@@ -189,9 +220,9 @@ Collection init_logs()
     //     }
     // }
 
-    std::vector<Mat<4>> transforms;
-    transforms.emplace_back(std::initializer_list<GLfloat>{
-        1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1. });
+    std::vector<glm::mat4> transforms;
+    transforms.emplace_back(1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0.,
+                            0., 0., 1.);
 
     Collection res(mesh, log_shader, std::move(transforms));
 
@@ -201,23 +232,23 @@ Collection init_logs()
             DOGL(glDrawArrays(GL_PATCHES, 0, 4));
         });
 
-    res.set_uniform = std::function<void(const Collection&)>(
-        [](const Collection& collection) {
-            auto shader_id = collection.program_id;
+    res.set_uniform =
+        std::function<void(const Collection&)>([](const Collection&) {
+            // auto shader_id = collection.program_id;
 
-            SET_UNIFORM(shader_id, "model_view_matrix",
-                        glUniformMatrix4fv(uniform_id, 1, GL_FALSE,
-                                           _state.scene.camera._view));
+            // SET_UNIFORM(shader_id, "model_view_matrix",
+            //             glUniformMatrix4fv(uniform_id, 1, GL_FALSE,
+            //                                _state.scene.camera._view));
 
-            SET_UNIFORM(shader_id, "projection_matrix",
-                        glUniformMatrix4fv(uniform_id, 1, GL_FALSE,
-                                           _state.scene.camera._projection));
+            // SET_UNIFORM(shader_id, "projection_matrix",
+            //             glUniformMatrix4fv(uniform_id, 1, GL_FALSE,
+            //                                _state.scene.camera._projection));
 
-            SET_UNIFORM(shader_id, "anim_time",
-                        glUniform1f(uniform_id, _state.scene.anim_time));
+            // SET_UNIFORM(shader_id, "anim_time",
+            //             glUniform1f(uniform_id, _state.scene.anim_time));
 
-            SET_UNIFORM(shader_id, "light_pos",
-                        glUniform3fv(uniform_id, 1, _state.light_pos));
+            // SET_UNIFORM(shader_id, "light_pos",
+            //             glUniform3fv(uniform_id, 1, _state.light_pos));
         });
 
     return res;

@@ -6,7 +6,7 @@
 #include "utils.hh"
 
 Collection::Collection(MeshData mesh, struct ShaderConfig shader,
-                       std::vector<Mat<4>>&& transforms)
+                       std::vector<glm::mat4>&& transforms)
     : mesh_(mesh)
     , shaders_(shader)
     , transforms(std::move(transforms))

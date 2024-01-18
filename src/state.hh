@@ -18,4 +18,5 @@ struct ProgramState
 
     // Scene info
     struct Scene scene;
+    GLfloat look_at_target[3] = { 0.0, 0.0, -1.0 };
 };
