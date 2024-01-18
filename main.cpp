@@ -141,7 +141,7 @@ Collection init_logs()
         .vertex = "shaders/log/vertex.glsl",
         .tesselation_control = "shaders/log/tcs.glsl",
         .tesselation_evaluation = "shaders/log/tes.glsl",
-        .geometry = "shaders/log/geometry.glsl",
+        // .geometry = "shaders/log/geometry.glsl",
         .fragment = "shaders/log/fragment.glsl",
     };
 

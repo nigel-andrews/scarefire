@@ -1,6 +1,6 @@
 #version 450
 
-in vec3 vColor;
+// in vec3 vColor;
 
 layout(location = 0) out vec4 color;
 
