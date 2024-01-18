@@ -13,7 +13,6 @@
 #include "src/utils.hh"
 
 #define DEBUG
-#undef DEBUG
 
 #ifdef DEBUG
 static std::vector<GLfloat> vertex_buffer_data {
@@ -144,8 +143,7 @@ void init_GL()
 {
     DOGL(glEnable(GL_DEPTH_TEST));
     DOGL(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
-    // DOGL(glEnable(GL_CULL_FACE));
-    DOGL(glClearColor(0.4, 0.4, 0.4, 1.0));
+    DOGL(glEnable(GL_CULL_FACE));
     DOGL(glPatchParameteri(GL_PATCH_VERTICES, 2));
 }
 
@@ -206,8 +204,8 @@ Collection init_logs()
             // SET_UNIFORM(shader_id, "anim_time",
             //             glUniform1f(uniform_id, _state.scene.anim_time));
 
-            // SET_UNIFORM(shader_id, "light_pos",
-            //             glUniform3fv(uniform_id, 1, _state.light_pos));
+            SET_UNIFORM(shader_id, "light_pos",
+                        glUniform3fv(uniform_id, 1, _state.light_pos));
         });
 
     return res;
