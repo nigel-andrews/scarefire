@@ -3,13 +3,13 @@
 
 #include <GL/freeglut.h>
 #include <GL/glu.h>
-#include <cmath>
 #include <functional>
 #include <iostream>
 #include <vector>
 
 #include "src/mesh.hh"
 #include "src/state.hh"
+#include "src/utils.hh"
 
 static const std::vector<GLfloat> vertex_buffer_data {
   -0.5, 0.0, +0.5,
@@ -141,9 +141,6 @@ int main(int argc, char *argv[]) {
 
   auto log_shader = ShaderConfig{
       .vertex = "shaders/log/vertex.shd",
-      // .tesselation_control = "shaders/waves/tessellation_control.shd",
-      // .tesselation_evaluation =
-      // "shaders/waves/tessellation_evaluation.shd",
       .fragment = "shaders/log/fragment.shd",
   };
 
@@ -153,6 +150,13 @@ int main(int argc, char *argv[]) {
       // Generate cylinder vertices
     }
   }
+
+  std::vector<Mat4> transforms{};
+  // transforms.emplace_back({1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1});
+
+  // FIXME: Weird, unclear C++ bug on transforms arg :(
+  // _state.scene.collections.push_back(Collection(mesh, log_shader,
+  // transforms));
 
   // _state.scene.collections
 
