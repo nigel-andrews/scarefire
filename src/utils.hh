@@ -53,19 +53,32 @@ public:
             this->data_[i] = rhs.data_[i];
     }
 
+    Mat& operator=(const Mat& rhs)
+    {
+        for (auto i = 0; i < N * N; i++)
+            this->data_[i] = rhs.data_[i];
+
+        return *this;
+    }
+
     GLfloat& operator()(int i, int j)
     {
-        assert(i * N + j < N * N);
-        return this->data_[i * N + j];
+        assert(j * N + i < N * N);
+        return this->data_[j * N + i];
     }
 
     const GLfloat& operator()(int i, int j) const
     {
-        assert(i * N + j < N * N);
-        return this->data_[i * N + j];
+        assert(j * N + i < N * N);
+        return this->data_[j * N + i];
     }
 
-    operator const GLfloat*()
+    operator const GLfloat*() const
+    {
+        return this->data_;
+    }
+
+    operator GLfloat*()
     {
         return this->data_;
     }

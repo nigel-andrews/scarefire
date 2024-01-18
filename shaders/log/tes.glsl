@@ -12,7 +12,7 @@ uniform mat4 projection_matrix;
 void main(void)
 {
     vec4 p1 = mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x);
-    float radius = 0.1;
+    float radius = 0.3;
     float u = gl_TessCoord.x;
 
     p1.yz = vec2(cos(u * 2.0 * PI), sin(u * 2.0 * PI)) * radius;

@@ -13,5 +13,5 @@ vec3 object_color = vec3(1.0, 1.0, 1.0);
 void main() {
   vec3 light_dir = normalize(light_pos - gPosition);
   color = vec4(clamp(object_color * dot(light_dir, gNormal), 0.0, 1.0), 1.0);
-  // color = vec4(light_pos, 1.);
+  // color = vec4(gl_FragCoord.z);
 }

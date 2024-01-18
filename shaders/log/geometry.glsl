@@ -16,7 +16,7 @@ void main(void)
     vec3 p3 = p1 + vec3(0., 0., 1.);
     vec3 p4 = p2 + vec3(0., 0., 1.);
 
-    gNormal = -cross(p1 - p2, p1 - p3);
+    gNormal = cross(p1 - p2, p1 - p3);
 
     gl_Position = gl_in[0].gl_Position;
     gPosition = tesPosition[0];

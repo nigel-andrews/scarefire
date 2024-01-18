@@ -33,11 +33,21 @@ static struct ProgramState _state
 
 void display()
 {
-    _state.scene.model_view_matrix(3, 0) = _state.offset[0];
-    _state.scene.model_view_matrix(3, 1) = _state.offset[1];
-    _state.scene.model_view_matrix(3, 2) = _state.offset[2];
+    // _state.scene.model_view_matrix(3, 0) = _state.offset[0];
+    // _state.scene.model_view_matrix(3, 1) = _state.offset[1];
+    // _state.scene.model_view_matrix(3, 2) = _state.offset[2];
+
+    DOGL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
+
+    // _state.scene.model_view_matrix(0, 3) = _state.offset[0];
+    // _state.scene.model_view_matrix(1, 3) = _state.offset[1];
+    // _state.scene.model_view_matrix(2, 3) = _state.offset[2];
 
     _state.scene.render();
+
+    DOGL(glBindVertexArray(0));
+
+    glutSwapBuffers();
 }
 
 void anim()
@@ -141,10 +151,12 @@ bool init_glew()
 
 void init_GL()
 {
+    DOGL(glClearDepth(0.0f));
     DOGL(glEnable(GL_DEPTH_TEST));
+    DOGL(glDepthFunc(GL_GREATER));
     DOGL(glPolygonMode(GL_FRONT_AND_BACK, GL_FILL));
-    DOGL(glEnable(GL_CULL_FACE));
-    DOGL(glPatchParameteri(GL_PATCH_VERTICES, 2));
+    DOGL(glClearColor(0.4, 0.4, 0.4, 1.0));
+    DOGL(glPatchParameteri(GL_PATCH_VERTICES, 4));
 }
 
 Collection init_logs()
@@ -186,7 +198,7 @@ Collection init_logs()
     res.render = std::function<void(const Collection&)>(
         [](const Collection& collection) {
             DOGL(glBindVertexArray(collection.vao_id));
-            DOGL(glDrawArrays(GL_PATCHES, 0, collection.mesh_.vertices.size()));
+            DOGL(glDrawArrays(GL_PATCHES, 0, 4));
         });
 
     res.set_uniform = std::function<void(const Collection&)>(
@@ -195,14 +207,14 @@ Collection init_logs()
 
             SET_UNIFORM(shader_id, "model_view_matrix",
                         glUniformMatrix4fv(uniform_id, 1, GL_FALSE,
-                                           _state.scene.model_view_matrix));
+                                           _state.scene.camera._view));
 
             SET_UNIFORM(shader_id, "projection_matrix",
                         glUniformMatrix4fv(uniform_id, 1, GL_FALSE,
-                                           _state.scene.projection_matrix));
+                                           _state.scene.camera._projection));
 
-            // SET_UNIFORM(shader_id, "anim_time",
-            //             glUniform1f(uniform_id, _state.scene.anim_time));
+            SET_UNIFORM(shader_id, "anim_time",
+                        glUniform1f(uniform_id, _state.scene.anim_time));
 
             SET_UNIFORM(shader_id, "light_pos",
                         glUniform3fv(uniform_id, 1, _state.light_pos));
