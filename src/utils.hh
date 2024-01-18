@@ -4,6 +4,8 @@
 #include <iostream>
 #include <string>
 
+using std::cout;
+
 #define TEST_OPENGL_ERROR()                                                    \
     do                                                                         \
     {                                                                          \

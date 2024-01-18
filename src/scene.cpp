@@ -2,6 +2,8 @@
 
 #include <GL/glut.h>
 
+#include "utils.hh"
+
 void Scene::render() const
 {
     for (auto& collection : this->collections)

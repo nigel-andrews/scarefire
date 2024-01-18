@@ -8,7 +8,6 @@
 
 #include "mesh.hh"
 #include "shader.hh"
-#include "utils.hh"
 
 struct Collection
 {

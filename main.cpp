@@ -1,7 +1,7 @@
 // clang-format off
 #include <cmath>
 #include <GL/glew.h>
-#include "glm/glm.hpp"
+#include <glm/glm.hpp>
 
 #include <GL/freeglut.h>
 #include <GL/glu.h>
