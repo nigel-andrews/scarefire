@@ -55,13 +55,14 @@ public:
 
     GLfloat& operator()(int i, int j)
     {
-        assert(j * N + i < N * N);
-        return this->data_[j * N + i];
+        assert(i * N + j < N * N);
+        return this->data_[i * N + j];
     }
 
     const GLfloat& operator()(int i, int j) const
     {
-        return this->data_[j * N + i];
+        assert(i * N + j < N * N);
+        return this->data_[i * N + j];
     }
 
     operator const GLfloat*()

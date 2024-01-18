@@ -1,7 +1,7 @@
 #version 450
 
 layout(lines) in;
-layout(triangle_strip, max_vertices = 3) out;
+layout(triangle_strip, max_vertices = 6) out;
 
 void main(void)
 {

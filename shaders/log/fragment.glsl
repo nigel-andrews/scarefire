@@ -9,5 +9,5 @@ layout(location = 0) out vec4 color;
 vec3 object_color = vec3(1.0, 1.0, 1.0);
 
 void main() {
-  color = vec4(object_color, 1.);
+  color = vec4(gl_FragCoord.z);
 }

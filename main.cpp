@@ -12,7 +12,21 @@
 #include "src/state.hh"
 #include "src/utils.hh"
 
+#define DEBUG
+#undef DEBUG
+
+#ifdef DEBUG
+static std::vector<GLfloat> vertex_buffer_data {
+  -0.5, 0.0, +0.5,
+  +0.5, 0.0, +0.5,
+  +0.5, 0.0, -0.5,
+  +0.5, 0.0, -0.5,
+  -0.5, 0.0, -0.5,
+  -0.5, 0.0, +0.5,
+};
+#else
 static std::vector<GLfloat> vertex_buffer_data {0., 1., 2.};
+#endif
 // clang-format on
 
 static struct ProgramState _state
@@ -20,9 +34,9 @@ static struct ProgramState _state
 
 void display()
 {
-    // _state.scene.model_view_matrix(3, 0) = _state.offset[0];
-    // _state.scene.model_view_matrix(3, 1) = _state.offset[1];
-    // _state.scene.model_view_matrix(3, 2) = _state.offset[2];
+    _state.scene.model_view_matrix(3, 0) = _state.offset[0];
+    _state.scene.model_view_matrix(3, 1) = _state.offset[1];
+    _state.scene.model_view_matrix(3, 2) = _state.offset[2];
 
     _state.scene.render();
 }
@@ -137,13 +151,22 @@ void init_GL()
 
 Collection init_logs()
 {
+#ifndef DEBUG
     auto log_shader = ShaderConfig{
         .vertex = "shaders/log/vertex.glsl",
         .tesselation_control = "shaders/log/tcs.glsl",
         .tesselation_evaluation = "shaders/log/tes.glsl",
-        // .geometry = "shaders/log/geometry.glsl",
+        .geometry = "shaders/log/geometry.glsl",
         .fragment = "shaders/log/fragment.glsl",
     };
+#else
+    auto log_shader = ShaderConfig{
+        .vertex = "shaders/waves/vertex.shd",
+        .tesselation_control = "shaders/waves/tcs.glsl",
+        .tesselation_evaluation = "shaders/waves/tes.glsl",
+        .fragment = "shaders/waves/fragment.shd",
+    };
+#endif
 
     MeshData mesh;
 
@@ -179,7 +202,10 @@ Collection init_logs()
             SET_UNIFORM(shader_id, "projection_matrix",
                         glUniformMatrix4fv(uniform_id, 1, GL_FALSE,
                                            _state.scene.projection_matrix));
-            //
+
+            // SET_UNIFORM(shader_id, "anim_time",
+            //             glUniform1f(uniform_id, _state.scene.anim_time));
+
             // SET_UNIFORM(shader_id, "light_pos",
             //             glUniform3fv(uniform_id, 1, _state.light_pos));
         });
