@@ -15,6 +15,7 @@ struct ProgramState
     GLint pos[2] = { 0, 0 };
 
     GLfloat light_pos[3] = { 0.0, 1.0, 0.0 };
+    GLfloat log_depth = 1.0;
 
     // Scene info
     struct Scene scene;

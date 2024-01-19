@@ -27,7 +27,12 @@ static std::vector<GLfloat> vertex_buffer_data {
   -0.5, 0.0, +0.5,
 };
 #else
-static std::vector<GLfloat> vertex_buffer_data {0., 1., 2.};
+static std::vector<glm::vec3> vertex_buffer_data{
+        {0., 0., 0.},
+        {0., 1., 0.},
+        {1., 1., 0.},
+        {1., 0., 0.}
+};
 #endif
 // clang-format on
 
@@ -76,10 +81,6 @@ void input_handler(unsigned char key, int, int)
         _state.scene.camera.rotate(0.1, { 0, 1, 0 });
     else if (key == 'd')
         _state.scene.camera.rotate(-0.1, { 0, 1, 0 });
-    else
-    {
-        std::cout << "rust < tout\n";
-    }
 }
 
 void mouse_button_handler(int button, int state, int x, int y)
@@ -128,9 +129,6 @@ void mouse_motion_handler(int x, int y)
 
     _state.pos[0] = x;
     _state.pos[1] = y;
-
-    // Now done in anim
-    // glutPostRedisplay();
 }
 
 void window_resize(int width, int height)
@@ -198,13 +196,6 @@ Collection init_logs()
     MeshData mesh;
 
     mesh.vertices = vertex_buffer_data;
-    // for (size_t i = 0; i < 10; i++)
-    // {
-    //     for (size_t theta = 0; theta < 360; theta += 30)
-    //     {
-    //
-    //     }
-    // }
 
     std::vector<glm::mat4> transforms;
     transforms.emplace_back(1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0.,
@@ -239,6 +230,9 @@ Collection init_logs()
 
             SET_UNIFORM(shader_id, "light_pos",
                         glUniform3fv(uniform_id, 1, _state.light_pos));
+
+            SET_UNIFORM(shader_id, "log_depth",
+                        glUniform1f(uniform_id, _state.log_depth));
         });
 
     return res;

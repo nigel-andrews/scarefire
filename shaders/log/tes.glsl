@@ -2,7 +2,7 @@
 
 #define PI 3.141592
 
-layout(isolines, equal_spacing, ccw) in;
+layout(quads, equal_spacing, ccw) in;
 
 out vec3 tesPosition;
 
@@ -12,11 +12,9 @@ uniform mat4 projection_matrix;
 void main(void)
 {
     vec4 p1 = mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x);
-    float radius = 0.3;
-    float u = gl_TessCoord.x;
+    vec4 p2 = mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);
+    vec4 center = mix(p1, p2, gl_TessCoord.y);
 
-    p1.yz = vec2(cos(u * 2.0 * PI), sin(u * 2.0 * PI)) * radius;
-
-    gl_Position = projection_matrix * model_view_matrix * p1;
-    tesPosition = p1.xyz;
+    gl_Position = projection_matrix * model_view_matrix * center;
+    tesPosition = center.xyz;
 }
