@@ -98,8 +98,6 @@ void process_standard_keys(unsigned char key, int, int)
         std::cout << movement.x << ' ' << movement.y << std::endl;
 
         float speed = 0.1f;
-        if (_state.shift)
-            speed *= 2.0f;
 
         if (movement.length() > 0.0f)
         {
@@ -128,7 +126,6 @@ void mouse_button_handler(int button, int state, int x, int y)
         _state.held = false;
 
     auto modifiers = glutGetModifiers();
-    _state.shift = modifiers & GLUT_ACTIVE_SHIFT;
     _state.ctrl = modifiers & GLUT_ACTIVE_CTRL;
 }
 
@@ -141,14 +138,10 @@ void mouse_motion_handler(int x, int y)
         _state.held = true;
     }
 
-    if (_state.shift)
+    if (_state.ctrl)
     {
-        // _state.offset[2] += (_state.mouse_pos[1] - y) / 100.;
-    }
-    else if (_state.ctrl)
-    {
-        // _state.light_pos[0] -= (_state.mouse_pos[0] - x) / 1000.;
-        // _state.light_pos[1] += (_state.mouse_pos[1] - y) / 1000.;
+        _state.light_pos[0] -= (_state.mouse_pos[0] - x) / 1000.;
+        _state.light_pos[1] += (_state.mouse_pos[1] - y) / 1000.;
     }
     else
     {
@@ -287,15 +280,17 @@ Collection init_logs()
                             uniform_id, 1, GL_FALSE,
                             (const float*)&_state.scene.camera._view_proj));
 
-#ifdef DEBUG
-            SET_UNIFORM(shader_id, "anim_time",
-                        glUniform1f(uniform_id, _state.scene.anim_time));
             SET_UNIFORM(
                 shader_id, "light_pos",
                 glUniform3fv(uniform_id, 1, (const float*)&_state.light_pos));
+#ifdef DEBUG
+            SET_UNIFORM(shader_id, "anim_time",
+                        glUniform1f(uniform_id, _state.scene.anim_time));
 #else
             SET_UNIFORM(shader_id, "log_depth",
                         glUniform1f(uniform_id, _state.log_depth));
+            SET_UNIFORM(shader_id, "log_width",
+                        glUniform1f(uniform_id, _state.log_width));
             SET_UNIFORM(shader_id, "log_center",
                         glUniform3fv(uniform_id, 1, (const float*)&log_center));
 #endif

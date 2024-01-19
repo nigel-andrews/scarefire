@@ -6,6 +6,7 @@ layout(triangles) in;
 layout(triangle_strip, max_vertices = VERTICES) out;
 
 uniform float log_depth;
+uniform float log_width;
 
 in vec3 tesPosition[];
 
@@ -42,13 +43,14 @@ void main(void)
 
     // Left
     vec3 pl = gl_in[int(mod(center_index + 1, 3))].gl_Position.xyz;
-    pl = normalize(pl - pc);
+    pl = normalize(pl - pc) * log_width;
 
     // Right
     vec3 pr = gl_in[int(mod(center_index + 2, 3))].gl_Position.xyz;
-    pr = normalize(pr - pc);
+    pr = normalize(pr - pc) * log_width;
 
-    gNormal = normalize(cross(pr - pc, pl - pc));
+    vec3 baseNormal = normalize(cross(pr - pc, pl - pc));
+    gNormal = normalize(model * vec4((mix(pl, pr, 0.5) - pc), 1.)).xyz;
 
     emit(pc);
 
@@ -58,11 +60,11 @@ void main(void)
         // Cross: (i / (VERTICES - 2)) X (? / log_depth)
         float factor = log_depth * float(i) / (VERTICES - 2);
 
-        emit(pl + factor * gNormal);
-        emit(pr + factor * gNormal);
+        emit(pl + factor * baseNormal);
+        emit(pr + factor * baseNormal);
     }
 
-    emit(pc + gNormal * log_depth);
+    emit(pc + baseNormal * log_depth);
 
     EndPrimitive();
 }
