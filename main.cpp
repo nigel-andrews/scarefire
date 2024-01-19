@@ -1,5 +1,6 @@
 // clang-format off
 #include <GL/glew.h>
+#include <algorithm>
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 
@@ -79,7 +80,8 @@ void init_anim()
 void process_standard_keys(unsigned char key, int, int)
 {
     Camera& camera = _state.scene.camera;
-    float delta_time = _state.scene.anim_time - _state.prev_input_time;
+    float delta_time =
+        std::max(_state.scene.anim_time - _state.prev_input_time, 1e-3f);
 
     {
         glm::vec3 movement = {};
