@@ -2,8 +2,8 @@
 
 layout( quads, equal_spacing, ccw ) in;
 
-uniform mat4 model_view_matrix;
-uniform mat4 projection_matrix;
+uniform mat4 view_proj;
+uniform mat4 model;
 
 uniform float anim_time;
 
@@ -59,8 +59,8 @@ void main() {
   vec4 p1 = mix(gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x);
   vec4 p2 = mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);
   vec4 p = mix(p1, p2, gl_TessCoord.y);
-  gl_Position = projection_matrix * model_view_matrix * (p + vec4(0., wave_result, 0., 0.));
-  tesPosition = p.xyz;
+  gl_Position = view_proj * model * (p + vec4(0., wave_result, 0., 0.));
+  tesPosition = vec4(model * p).xyz;
 
   // vec3 n1 = mix(tcsNormal[0], tcsNormal[1], gl_TessCoord.x);
   // vec3 n2 = mix(tcsNormal[3], tcsNormal[2], gl_TessCoord.x);

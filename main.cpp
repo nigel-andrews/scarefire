@@ -15,16 +15,16 @@
 #include "src/utils.hh"
 
 #define DEBUG
-#undef DEBUG
+// #undef DEBUG
 
 #ifdef DEBUG
-static std::vector<GLfloat> vertex_buffer_data {
-  -0.5, 0.0, +0.5,
-  +0.5, 0.0, +0.5,
-  +0.5, 0.0, -0.5,
-  +0.5, 0.0, -0.5,
-  -0.5, 0.0, -0.5,
-  -0.5, 0.0, +0.5,
+static std::vector<glm::vec3> vertex_buffer_data {
+    {-0.5, 0.0, +0.5},
+    {+0.5, 0.0, +0.5},
+    {+0.5, 0.0, -0.5},
+    {+0.5, 0.0, -0.5},
+    {-0.5, 0.0, -0.5},
+    {-0.5, 0.0, +0.5},
 };
 #else
 static std::vector<glm::vec3> vertex_buffer_data{
@@ -75,12 +75,43 @@ void init_anim()
     glutTimerFunc(33, timer, 0);
 }
 
-void input_handler(unsigned char key, int, int)
+void process_standard_keys(unsigned char key, int, int)
 {
-    if (key == 'a')
-        _state.scene.camera.rotate(0.1, { 0, 1, 0 });
-    else if (key == 'd')
-        _state.scene.camera.rotate(-0.1, { 0, 1, 0 });
+    Camera& camera = _state.scene.camera;
+    float delta_time = _state.scene.anim_time - _state.prev_input_time;
+
+    {
+        glm::vec3 movement = {};
+        if (key == 'w')
+            movement += camera.forward() / delta_time;
+        if (key == 's')
+            movement -= camera.forward() / delta_time;
+        if (key == 'd')
+            movement += camera.right() / delta_time;
+        if (key == 'a')
+            movement -= camera.right() / delta_time;
+
+        std::cout << movement.x << ' ' << movement.y << std::endl;
+
+        float speed = 0.1f;
+        if (_state.shift)
+            speed *= 2.0f;
+
+        if (movement.length() > 0.0f)
+        {
+            const glm::vec3 new_pos =
+                camera.position() + movement * delta_time * speed;
+
+            camera.set_view(
+                glm::lookAt(new_pos, new_pos + camera.forward(), camera.up()));
+
+            std::cout << "Pos: " << new_pos.x << ' ' << new_pos.y << std::endl;
+
+            glutPostRedisplay();
+        }
+    }
+
+    _state.prev_input_time = _state.scene.anim_time;
 }
 
 void mouse_button_handler(int button, int state, int x, int y)
@@ -88,17 +119,11 @@ void mouse_button_handler(int button, int state, int x, int y)
     (void)button;
 
     if (state == GLUT_DOWN)
-    {
-        _state.pos[0] = x;
-        _state.pos[1] = y;
-    }
+        _state.mouse_pos = { x, y };
     else
-    {
         _state.held = false;
-    }
 
     auto modifiers = glutGetModifiers();
-
     _state.shift = modifiers & GLUT_ACTIVE_SHIFT;
     _state.ctrl = modifiers & GLUT_ACTIVE_CTRL;
 }
@@ -107,28 +132,42 @@ void mouse_motion_handler(int x, int y)
 {
     if (!_state.held)
     {
-        _state.pos[0] = x;
-        _state.pos[1] = y;
+        // Resync mouse pos if it wasn't held
+        _state.mouse_pos = { x, y };
         _state.held = true;
     }
 
     if (_state.shift)
     {
-        _state.offset[2] += (_state.pos[1] - y) / 100.;
+        // _state.offset[2] += (_state.mouse_pos[1] - y) / 100.;
     }
     else if (_state.ctrl)
     {
-        _state.light_pos[0] -= (_state.pos[0] - x) / 1000.;
-        _state.light_pos[1] += (_state.pos[1] - y) / 1000.;
+        // _state.light_pos[0] -= (_state.mouse_pos[0] - x) / 1000.;
+        // _state.light_pos[1] += (_state.mouse_pos[1] - y) / 1000.;
     }
     else
     {
-        _state.offset[0] -= (_state.pos[0] - x) / 1000.;
-        _state.offset[1] += (_state.pos[1] - y) / 1000.;
+        Camera& camera = _state.scene.camera;
+
+        const glm::vec2 new_pos{ x, y };
+        const glm::vec2 delta = glm::vec2(_state.mouse_pos - new_pos) * 0.01f;
+        if (delta.length() > 0.0f)
+        {
+            glm::mat4 rot = glm::rotate(glm::mat4(1.0f), delta.x,
+                                        glm::vec3(0.0f, 1.0f, 0.0f));
+            rot = glm::rotate(rot, delta.y, camera.right());
+            camera.set_view(glm::lookAt(
+                camera.position(),
+                camera.position() + (glm::mat3(rot) * camera.forward()),
+                (glm::mat3(rot) * camera.up())));
+        }
+
+        // _state.offset[0] -= (_state.mouse_pos[0] - x) / 1000.;
+        // _state.offset[1] += (_state.mouse_pos[1] - y) / 1000.;
     }
 
-    _state.pos[0] = x;
-    _state.pos[1] = y;
+    _state.mouse_pos = { x, y };
 }
 
 void window_resize(int width, int height)
@@ -151,7 +190,7 @@ void init_glut(int& argc, char* argv[])
     glutReshapeFunc(window_resize);
     glutMouseFunc(mouse_button_handler);
     glutMotionFunc(mouse_motion_handler);
-    glutKeyboardFunc(input_handler);
+    glutKeyboardFunc(process_standard_keys);
 }
 
 bool init_glew()
@@ -210,26 +249,28 @@ Collection init_logs()
         });
 
     res.set_uniform = std::function<void(const Collection&)>(
-        [](const Collection& collection) {
+        [res](const Collection& collection) {
             auto shader_id = collection.program_id;
 
-            SET_UNIFORM(
-                shader_id, "model_view_matrix",
-                glUniformMatrix4fv(uniform_id, 1, GL_FALSE,
-                                   (const float*)&_state.scene.camera._view));
-
-            SET_UNIFORM(shader_id, "projection_matrix",
+            SET_UNIFORM(shader_id, "view_proj",
                         glUniformMatrix4fv(
                             uniform_id, 1, GL_FALSE,
-                            (const float*)&_state.scene.camera._projection));
+                            (const float*)&_state.scene.camera._view_proj));
+
+            SET_UNIFORM(
+                shader_id, "model",
+                glUniformMatrix4fv(uniform_id, 1, GL_FALSE,
+                                   (const float*)&res.transforms.back()));
 
 #ifdef DEBUG
             SET_UNIFORM(shader_id, "anim_time",
                         glUniform1f(uniform_id, _state.scene.anim_time));
 #endif
 
-            SET_UNIFORM(shader_id, "light_pos",
-                        glUniform3fv(uniform_id, 1, _state.light_pos));
+            // SET_UNIFORM(
+            //     shader_id, "light_pos",
+            //     glUniform3fv(uniform_id, 1, (const
+            //     float*)&_state.light_pos));
 
             SET_UNIFORM(shader_id, "log_depth",
                         glUniform1f(uniform_id, _state.log_depth));

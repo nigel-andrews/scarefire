@@ -6,8 +6,8 @@ layout(quads, equal_spacing, ccw) in;
 
 out vec3 tesPosition;
 
-uniform mat4 model_view_matrix;
-uniform mat4 projection_matrix;
+uniform mat4 model;
+uniform mat4 view_proj;
 
 void main(void)
 {
@@ -15,6 +15,6 @@ void main(void)
     vec4 p2 = mix(gl_in[3].gl_Position, gl_in[2].gl_Position, gl_TessCoord.x);
     vec4 center = mix(p1, p2, gl_TessCoord.y);
 
-    gl_Position = projection_matrix * model_view_matrix * center;
-    tesPosition = center.xyz;
+    gl_Position = view_proj * model * center;
+    tesPosition = (model * center).xyz;
 }
