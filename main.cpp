@@ -1,6 +1,7 @@
 // clang-format off
 #include <GL/glew.h>
 #include <algorithm>
+#include <cstdlib>
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 
@@ -47,7 +48,7 @@ void display()
 {
     DOGL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
 
-    _state.scene.render();
+    _state.scene.render(_state);
 
     DOGL(glBindVertexArray(0));
 

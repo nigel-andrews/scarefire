@@ -4,7 +4,7 @@
 
 #include "utils.hh"
 
-void Scene::render() const
+void Scene::render(ProgramState& state) const
 {
     for (auto& collection : this->collections)
     {
@@ -15,5 +15,5 @@ void Scene::render() const
     }
 
     if (this->fire.has_value())
-        this->fire->render();
+        this->fire->render(state);
 }

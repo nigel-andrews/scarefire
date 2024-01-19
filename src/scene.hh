@@ -6,6 +6,8 @@
 #include "collection.hh"
 #include "particle_generator.hh"
 
+struct ProgramState;
+
 struct Scene
 {
     // Object collections
@@ -21,5 +23,5 @@ struct Scene
     Camera camera;
 
     // Methods
-    void render() const;
+    void render(ProgramState& state) const;
 };
