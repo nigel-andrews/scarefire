@@ -2,12 +2,12 @@
 
 #include <GL/glew.h>
 #include <functional>
+#include <glm/glm.hpp>
 #include <stdexcept>
 #include <vector>
 
 #include "mesh.hh"
 #include "shader.hh"
-#include "utils.hh"
 
 struct Collection
 {
@@ -18,7 +18,7 @@ struct Collection
     ShaderConfig shaders_;
 
     // Individual
-    std::vector<Mat<4>> transforms;
+    std::vector<glm::mat4> transforms;
 
     // Aggregate
     std::function<void(const Collection&)> render = [](const Collection&) {
@@ -31,7 +31,7 @@ struct Collection
 
     // Methods
     Collection(MeshData mesh, ShaderConfig shader,
-               std::vector<Mat<4>>&& transforms);
+               std::vector<glm::mat4>&& transforms);
 
     //! ================================= END =================================
     //! Anything below this is kept in case we have enough time to complete it.

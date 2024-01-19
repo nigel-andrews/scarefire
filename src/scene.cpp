@@ -2,10 +2,10 @@
 
 #include <GL/glut.h>
 
+#include "utils.hh"
+
 void Scene::render() const
 {
-    DOGL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-
     for (auto& collection : this->collections)
     {
         DOGL(glUseProgram(collection.program_id));
@@ -13,8 +13,4 @@ void Scene::render() const
         collection.set_uniform(collection);
         collection.render(collection);
     }
-
-    DOGL(glBindVertexArray(0));
-
-    glutSwapBuffers();
 }

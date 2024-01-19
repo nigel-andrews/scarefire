@@ -2,6 +2,7 @@
 
 #include <GL/glew.h>
 
+#include "camera.hh"
 #include "collection.hh"
 
 struct Scene
@@ -15,20 +16,7 @@ struct Scene
     // Lighting
     GLfloat light_pos[3] = { 0.0, 1.0, 0.0 };
 
-    // Camera
-    Mat<4> model_view_matrix{
-        0.577350, -0.3333, 0.57735, 0.00000, //
-        0.000000, 0.66667, 0.57735, 0.00000, //
-        -0.57735, -0.3333, 0.57735, 0.00000, //
-        0.000000, 0.00000, -17.000, 1.00000, //
-    };
-
-    Mat<4> projection_matrix{
-        15.0000, 0.00000, 0.00000, 0.00000, //
-        0.00000, 15.0000, 0.00000, 0.00000, //
-        0.00000, 0.00000, -1.0002, -2.0000, //
-        0.00000, 0.00000, -5.001,  0.00000, //
-    };
+    Camera camera;
 
     // Methods
     void render() const;

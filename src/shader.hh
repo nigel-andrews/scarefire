@@ -25,4 +25,4 @@ struct ShaderConfig
 };
 
 GLint init_arbitrary_shader(ShaderConfig config);
-GLint init_compute_shader(std::string&& path);
+GLint init_compute_shader(std::string& path);

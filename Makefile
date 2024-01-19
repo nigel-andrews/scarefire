@@ -8,6 +8,8 @@
 
 CC = g++
 
+CPPFLAGS = -Iglm
+
 SRC_DIR = src
 OBJ_DIR = build
 
@@ -22,7 +24,7 @@ CXX_FLAGS +=
 CXX_FLAGS += -m64 -march=native
 CXX_FLAGS += -fopt-info-vec-optimized #-fopt-info-vec-missed -ftree-vectorize
 #CXX_FLAGS += -I/home/jonathan/work/enseignement/matieres/synthese/prog/opengl/compute_shader/jf_gl_tools/build_head/src
-LDXX_FLAGS = -lGL  -lGLEW -lglut -lpthread -lstdc++_libbacktrace -fsanitize=address
+LDXX_FLAGS = -lGL -lGLU  -lGLEW -lglut -lpthread -lstdc++_libbacktrace -fsanitize=address
 #LDXX_FLAGS += /home/jonathan/work/enseignement/matieres/synthese/prog/opengl/compute_shader/jf_gl_tools/dist_lib/libjfglt.a
 
 MAIN_FILE = main.cpp
@@ -70,13 +72,13 @@ post-build:
 main-build: pre-build build
 
 build: $(OBJ_FILES)
-	$(CC) $(MAIN_FILE) -o $(DIST) $(OBJ_FILES) $(CXX_FLAGS) $(LDXX_FLAGS)
+	$(CC) $(CPPFLAGS) $(MAIN_FILE) -o $(DIST) $(OBJ_FILES) $(CXX_FLAGS) $(LDXX_FLAGS)
 
 build/%.o: src/%.cpp src/%.hh
 	@$(call color,2)
 	@echo "[$@] $(CXX_FLAGS)"
 	@$(call default_color)
-	@$(CC) -c -o $@ $< $(CXX_FLAGS) ; \
+	@$(CC) $(CPPFLAGS) -c -o $@ $< $(CXX_FLAGS) ; \
 	sta=$$?;	  \
 	if [ $$sta -eq 0 ]; then  \
 	  $(call color,2) ; \
