@@ -151,6 +151,9 @@ GLint init_compute_shader(std::string& path)
     std::vector<GLuint> shader_ids;
     shader_ids.emplace_back(compute_shader_id);
 
+    if (!checked_compile_shader(shader_ids.data(), 0))
+        return -1;
+
     DOGL(program_id = glCreateProgram());
     if (!program_id)
         return -1;

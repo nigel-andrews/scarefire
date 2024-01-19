@@ -11,8 +11,11 @@ using std::cout;
     {                                                                          \
         GLenum err = glGetError();                                             \
         if (err != GL_NO_ERROR)                                                \
-            std::cerr << "OpenGL ERROR! " << __LINE__ << ": " << err           \
+        {                                                                      \
+            std::cerr << "[GL][INFO] " << __FILE__ << ":" << __LINE__          \
                       << std::endl;                                            \
+            /*std::exit(1);*/                                                  \
+        }                                                                      \
     } while (0)
 
 #define DOGL(...)                                                              \

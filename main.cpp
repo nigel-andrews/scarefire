@@ -13,6 +13,7 @@
 #include "glm/ext/scalar_constants.hpp"
 #include "src/collection.hh"
 #include "src/mesh.hh"
+#include "src/particle_generator.hh"
 #include "src/state.hh"
 #include "src/utils.hh"
 
@@ -87,8 +88,6 @@ void process_standard_keys(unsigned char key, int, int)
         if (key == 'a')
             movement -= camera.right() / delta_time;
 
-        std::cout << movement.x << ' ' << movement.y << std::endl;
-
         float speed = 0.1f;
 
         if (movement.length() > 0.0f)
@@ -98,8 +97,6 @@ void process_standard_keys(unsigned char key, int, int)
 
             camera.set_view(
                 glm::lookAt(new_pos, new_pos + camera.forward(), camera.up()));
-
-            std::cout << "Pos: " << new_pos.x << ' ' << new_pos.y << std::endl;
 
             glutPostRedisplay();
         }
@@ -133,9 +130,9 @@ void mouse_motion_handler(int x, int y)
     if (_state.ctrl)
     {
         _state.light_pos -=
-            _state.scene.camera.right() * ((_state.mouse_pos[0] - x) / 1000.f);
+            _state.scene.camera.right() * ((_state.mouse_pos[0] - x) / 100.f);
         _state.light_pos +=
-            _state.scene.camera.up() * ((_state.mouse_pos[1] - y) / 1000.f);
+            _state.scene.camera.up() * ((_state.mouse_pos[1] - y) / 100.f);
     }
     else
     {
@@ -321,6 +318,11 @@ int main(int argc, char* argv[])
     init_anim();
 
     _state.scene.collections.emplace_back(init_logs());
+    _state.scene.fire =
+        FireGenerator{ ParticleGeneratorConfig{},
+                       ShaderConfig{ .vertex = "shaders/fire/vertex.glsl",
+                                     .fragment = "shaders/fire/fragment.glsl" },
+                       "shaders/fire/compute.glsl" };
 
     glutMainLoop();
 }

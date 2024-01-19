@@ -4,11 +4,13 @@
 
 #include "camera.hh"
 #include "collection.hh"
+#include "particle_generator.hh"
 
 struct Scene
 {
     // Object collections
     std::vector<struct Collection> collections;
+    std::optional<FireGenerator> fire;
 
     // Scene state
     float anim_time;

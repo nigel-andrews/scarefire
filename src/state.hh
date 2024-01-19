@@ -1,8 +1,8 @@
 #pragma once
 
 #include <GL/glew.h>
+#include <glm/fwd.hpp>
 
-#include "glm/fwd.hpp"
 #include "scene.hh"
 
 struct ProgramState

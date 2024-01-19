@@ -13,4 +13,7 @@ void Scene::render() const
         collection.set_uniform(collection);
         collection.render(collection);
     }
+
+    if (this->fire.has_value())
+        this->fire->render();
 }
