@@ -10,6 +10,7 @@
 #include <iostream>
 #include <vector>
 
+#include "glm/ext/scalar_constants.hpp"
 #include "src/collection.hh"
 #include "src/mesh.hh"
 #include "src/state.hh"
@@ -240,8 +241,27 @@ Collection init_logs()
     mesh.vertices = vertex_buffer_data;
 
     std::vector<glm::mat4> transforms;
-    transforms.emplace_back(1., 0., 0., 0., 0., 1., 0., 0., 0., 0., 1., 0., 0.,
-                            0., 0., 1.);
+    // clang-format off
+    auto transform = glm::mat4(1.);
+
+
+    transform = glm::translate(transform, {1, 0, 0});
+    transform = glm::rotate(transform, glm::pi<float>() / 4.f, {1, 0, 0});
+    transforms.emplace_back(transform);
+    transform = glm::rotate(transform, -glm::pi<float>() / 4.f, {1, 0, 0});
+
+    transform = glm::rotate(transform, glm::pi<float>() / 2.f , {0,1,0});
+    transforms.emplace_back(transform);
+    transform = glm::rotate(transform, -glm::pi<float>() / 4.f, {1, 0, 0});
+
+    transform = glm::rotate(transform, glm::pi<float>() / 2.f , {0,1,0});
+    transforms.emplace_back(transform);
+    transform = glm::rotate(transform, -glm::pi<float>() / 4.f, {1, 0, 0});
+
+    transform = glm::rotate(transform, glm::pi<float>() / 2.f , {0,1,0});
+    transforms.emplace_back(transform);
+    transform = glm::rotate(transform, -glm::pi<float>() / 4.f, {1, 0, 0});
+    // clang-format on
 
     Collection res(mesh, log_shader, std::move(transforms));
 
