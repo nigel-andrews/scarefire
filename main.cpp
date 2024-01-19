@@ -44,15 +44,7 @@ static struct ProgramState _state
 
 void display()
 {
-    // _state.scene.model_view_matrix(3, 0) = _state.offset[0];
-    // _state.scene.model_view_matrix(3, 1) = _state.offset[1];
-    // _state.scene.model_view_matrix(3, 2) = _state.offset[2];
-
     DOGL(glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT));
-
-    // _state.scene.model_view_matrix(0, 3) = _state.offset[0];
-    // _state.scene.model_view_matrix(1, 3) = _state.offset[1];
-    // _state.scene.model_view_matrix(2, 3) = _state.offset[2];
 
     _state.scene.render();
 
@@ -140,8 +132,10 @@ void mouse_motion_handler(int x, int y)
 
     if (_state.ctrl)
     {
-        _state.light_pos[0] -= (_state.mouse_pos[0] - x) / 1000.;
-        _state.light_pos[1] += (_state.mouse_pos[1] - y) / 1000.;
+        _state.light_pos -=
+            _state.scene.camera.right() * ((_state.mouse_pos[0] - x) / 1000.f);
+        _state.light_pos +=
+            _state.scene.camera.up() * ((_state.mouse_pos[1] - y) / 1000.f);
     }
     else
     {
@@ -159,9 +153,6 @@ void mouse_motion_handler(int x, int y)
                 camera.position() + (glm::mat3(rot) * camera.forward()),
                 (glm::mat3(rot) * camera.up())));
         }
-
-        // _state.offset[0] -= (_state.mouse_pos[0] - x) / 1000.;
-        // _state.offset[1] += (_state.mouse_pos[1] - y) / 1000.;
     }
 
     _state.mouse_pos = { x, y };

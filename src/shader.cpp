@@ -143,7 +143,7 @@ GLint init_arbitrary_shader(ShaderConfig config)
     return program_id;
 }
 
-GLint init_compute_shader(std::string&& path)
+GLint init_compute_shader(std::string& path)
 {
     GLint program_id;
 
