@@ -40,7 +40,7 @@ Collection::Collection(MeshData mesh, struct ShaderConfig shader,
 
     // Init vertex VBO
     DOGL(glBindBuffer(GL_ARRAY_BUFFER, vbo_ids[0]));
-    DOGL(glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(float),
+    DOGL(glBufferData(GL_ARRAY_BUFFER, mesh.vertices.size() * sizeof(glm::vec3),
                       mesh.vertices.data(), GL_STATIC_DRAW));
     DOGL(glVertexAttribPointer(vertex_location, 3, GL_FLOAT, GL_FALSE, 0, 0));
     DOGL(glEnableVertexAttribArray(vertex_location));
