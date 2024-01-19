@@ -13,24 +13,44 @@ out vec3 gNormal;
 out vec3 gPosition;
 out vec3 gColor;
 
+uniform mat4 view_proj;
+uniform mat4 model;
+
+uniform vec3 log_center;
+
 float rand(vec2 co){
     return fract(sin(dot(co, vec2(12.9898, 78.233))) * 43758.5453);
 }
 
-void set_color(vec3 pos) {
+void emit(vec3 pos) {
+    vec4 world = model * vec4(pos, 1.);
+    gl_Position = view_proj * world;
+    gPosition = world.xyz;
     gColor = vec3(rand(pos.xy), rand(pos.xz), rand(pos.yz));
+    EmitVertex();
 }
 
 void main(void)
 {
-    vec3 p1 = gl_in[0].gl_Position.xyz;
-    vec3 p2 = gl_in[1].gl_Position.xyz;
-    vec3 p3 = gl_in[2].gl_Position.xyz;
-    gNormal = normalize(cross(p1 - p3, p2 - p3));
+    int center_index;
+    for (center_index = 0; center_index < 3; center_index++)
+        if (length(gl_in[center_index].gl_Position.xyz - log_center) < 1e-3)
+            break;
+    
+    // Center
+    vec3 pc = gl_in[center_index].gl_Position.xyz;
 
-    gl_Position = vec4(p1, 1.);
-    set_color(p1);
-    EmitVertex();
+    // Left
+    vec3 pl = gl_in[int(mod(center_index + 1, 3))].gl_Position.xyz;
+    pl = normalize(pl - pc);
+
+    // Right
+    vec3 pr = gl_in[int(mod(center_index + 2, 3))].gl_Position.xyz;
+    pr = normalize(pr - pc);
+
+    gNormal = normalize(cross(pr - pc, pl - pc));
+
+    emit(pc);
 
     // -2 to account for start/endcap center vertices
     for (int i = 0; i < VERTICES - 2; i += 2)
@@ -38,21 +58,11 @@ void main(void)
         // Cross: (i / (VERTICES - 2)) X (? / log_depth)
         float factor = log_depth * float(i) / (VERTICES - 2);
 
-        vec3 second = p2 + factor * gNormal;
-        gl_Position = vec4(second, 1.);
-        set_color(second);
-        EmitVertex();
-
-        vec3 third = p3 + factor * gNormal;
-        gl_Position = vec4(third, 1.);
-        set_color(third);
-        EmitVertex();
+        emit(pl + factor * gNormal);
+        emit(pr + factor * gNormal);
     }
 
-    vec3 last = p1 + gNormal * log_depth;
-    gl_Position = vec4(last, 1.);
-    set_color(last);
-    EmitVertex();
+    emit(pc + gNormal * log_depth);
 
     EndPrimitive();
 }

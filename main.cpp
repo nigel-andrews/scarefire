@@ -15,7 +15,7 @@
 #include "src/utils.hh"
 
 #define DEBUG
-// #undef DEBUG
+#undef DEBUG
 
 #ifdef DEBUG
 static std::vector<glm::vec3> vertex_buffer_data {
@@ -33,6 +33,7 @@ static std::vector<glm::vec3> vertex_buffer_data{
         {1., 1., 0.},
         {1., 0., 0.}
 };
+static glm::vec3 log_center{0.5, 0.5, 0.};
 #endif
 // clang-format on
 
@@ -245,11 +246,18 @@ Collection init_logs()
     res.render = std::function<void(const Collection&)>(
         [](const Collection& collection) {
             DOGL(glBindVertexArray(collection.vao_id));
-            DOGL(glDrawArrays(GL_PATCHES, 0, 4));
+
+            for (const auto& transform : collection.transforms)
+            {
+                SET_UNIFORM(collection.program_id, "model",
+                            glUniformMatrix4fv(uniform_id, 1, GL_FALSE,
+                                               (const float*)&transform));
+                DOGL(glDrawArrays(GL_PATCHES, 0, 4));
+            }
         });
 
     res.set_uniform = std::function<void(const Collection&)>(
-        [res](const Collection& collection) {
+        [](const Collection& collection) {
             auto shader_id = collection.program_id;
 
             SET_UNIFORM(shader_id, "view_proj",
@@ -257,23 +265,18 @@ Collection init_logs()
                             uniform_id, 1, GL_FALSE,
                             (const float*)&_state.scene.camera._view_proj));
 
-            SET_UNIFORM(
-                shader_id, "model",
-                glUniformMatrix4fv(uniform_id, 1, GL_FALSE,
-                                   (const float*)&res.transforms.back()));
-
 #ifdef DEBUG
             SET_UNIFORM(shader_id, "anim_time",
                         glUniform1f(uniform_id, _state.scene.anim_time));
-#endif
-
-            // SET_UNIFORM(
-            //     shader_id, "light_pos",
-            //     glUniform3fv(uniform_id, 1, (const
-            //     float*)&_state.light_pos));
-
+            SET_UNIFORM(
+                shader_id, "light_pos",
+                glUniform3fv(uniform_id, 1, (const float*)&_state.light_pos));
+#else
             SET_UNIFORM(shader_id, "log_depth",
                         glUniform1f(uniform_id, _state.log_depth));
+            SET_UNIFORM(shader_id, "log_center",
+                        glUniform3fv(uniform_id, 1, (const float*)&log_center));
+#endif
         });
 
     return res;
