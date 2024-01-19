@@ -1,5 +1,6 @@
 // clang-format off
 #include <GL/glew.h>
+#include <algorithm>
 #include <glm/glm.hpp>
 #include <glm/ext.hpp>
 
@@ -55,7 +56,7 @@ void display()
 
 void anim()
 {
-    _state.scene.anim_time += 0.1;
+    _state.anim_time += 0.1;
     glutPostRedisplay();
 }
 
@@ -70,16 +71,44 @@ void init_anim()
     glutTimerFunc(33, timer, 0);
 }
 
-void input_handler(unsigned char key, int, int)
+void process_standard_keys(unsigned char key, int, int)
 {
-    if (key == 'a')
-        _state.scene.camera.rotate(0.1, { 0, 1, 0 });
-    else if (key == 'd')
-        _state.scene.camera.rotate(-0.1, { 0, 1, 0 });
-    else
+    Camera& camera = _state.scene.camera;
+    float delta_time =
+        std::max(_state.anim_time - _state.prev_input_time, 1e-3f);
+
     {
-        std::cout << "rust < tout\n";
+        glm::vec3 movement = {};
+        if (key == 'w')
+            movement += camera.forward() / delta_time;
+        if (key == 's')
+            movement -= camera.forward() / delta_time;
+        if (key == 'd')
+            movement += camera.right() / delta_time;
+        if (key == 'a')
+            movement -= camera.right() / delta_time;
+
+        std::cout << movement.x << ' ' << movement.y << std::endl;
+
+        float speed = 0.1f;
+        if (_state.shift)
+            speed *= 2.0f;
+
+        if (movement.length() > 0.0f)
+        {
+            const glm::vec3 new_pos =
+                camera.position() + movement * delta_time * speed;
+
+            camera.set_view(
+                glm::lookAt(new_pos, new_pos + camera.forward(), camera.up()));
+
+            std::cout << "Pos: " << new_pos.x << ' ' << new_pos.y << std::endl;
+
+            glutPostRedisplay();
+        }
     }
+
+    _state.prev_input_time = _state.anim_time;
 }
 
 void mouse_button_handler(int button, int state, int x, int y)
@@ -153,7 +182,7 @@ void init_glut(int& argc, char* argv[])
     glutReshapeFunc(window_resize);
     glutMouseFunc(mouse_button_handler);
     glutMotionFunc(mouse_motion_handler);
-    glutKeyboardFunc(input_handler);
+    glutKeyboardFunc(process_standard_keys);
 }
 
 bool init_glew()
@@ -234,7 +263,7 @@ Collection init_logs()
 
 #ifdef DEBUG
             SET_UNIFORM(shader_id, "anim_time",
-                        glUniform1f(uniform_id, _state.scene.anim_time));
+                        glUniform1f(uniform_id, _state.anim_time));
 #endif
 
             SET_UNIFORM(shader_id, "light_pos",

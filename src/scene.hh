@@ -10,9 +10,6 @@ struct Scene
     // Object collections
     std::vector<struct Collection> collections;
 
-    // Scene state
-    float anim_time;
-
     // Lighting
     GLfloat light_pos[3] = { 0.0, 1.0, 0.0 };
 

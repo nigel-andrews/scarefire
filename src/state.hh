@@ -12,6 +12,10 @@ struct ProgramState
     bool ctrl = false;
     GLfloat offset[3] = { 0, 0, -5 };
 
+    // Timing
+    float anim_time = 0;
+    float prev_input_time = 0;
+
     GLint pos[2] = { 0, 0 };
 
     GLfloat light_pos[3] = { 0.0, 1.0, 0.0 };
