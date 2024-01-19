@@ -117,8 +117,8 @@ void mouse_button_handler(int button, int state, int x, int y)
 
     if (state == GLUT_DOWN)
     {
-        _state.pos[0] = x;
-        _state.pos[1] = y;
+        _state.mouse_pos[0] = x;
+        _state.mouse_pos[1] = y;
     }
     else
     {
@@ -135,31 +135,42 @@ void mouse_motion_handler(int x, int y)
 {
     if (!_state.held)
     {
-        _state.pos[0] = x;
-        _state.pos[1] = y;
+        // Resync mouse pos if it wasn't held
+        _state.mouse_pos = { x, y };
         _state.held = true;
     }
 
     if (_state.shift)
     {
-        _state.offset[2] += (_state.pos[1] - y) / 100.;
+        // _state.offset[2] += (_state.mouse_pos[1] - y) / 100.;
     }
     else if (_state.ctrl)
     {
-        _state.light_pos[0] -= (_state.pos[0] - x) / 1000.;
-        _state.light_pos[1] += (_state.pos[1] - y) / 1000.;
+        // _state.light_pos[0] -= (_state.mouse_pos[0] - x) / 1000.;
+        // _state.light_pos[1] += (_state.mouse_pos[1] - y) / 1000.;
     }
     else
     {
-        _state.offset[0] -= (_state.pos[0] - x) / 1000.;
-        _state.offset[1] += (_state.pos[1] - y) / 1000.;
+        Camera& camera = _state.scene.camera;
+
+        const glm::vec2 new_pos{ x, y };
+        const glm::vec2 delta = glm::vec2(_state.mouse_pos - new_pos) * 0.01f;
+        if (delta.length() > 0.0f)
+        {
+            glm::mat4 rot = glm::rotate(glm::mat4(1.0f), delta.x,
+                                        glm::vec3(0.0f, 1.0f, 0.0f));
+            rot = glm::rotate(rot, delta.y, camera.right());
+            camera.set_view(glm::lookAt(
+                camera.position(),
+                camera.position() + (glm::mat3(rot) * camera.forward()),
+                (glm::mat3(rot) * camera.up())));
+        }
+
+        // _state.offset[0] -= (_state.mouse_pos[0] - x) / 1000.;
+        // _state.offset[1] += (_state.mouse_pos[1] - y) / 1000.;
     }
 
-    _state.pos[0] = x;
-    _state.pos[1] = y;
-
-    // Now done in anim
-    // glutPostRedisplay();
+    _state.mouse_pos = { x, y };
 }
 
 void window_resize(int width, int height)
@@ -266,8 +277,9 @@ Collection init_logs()
                         glUniform1f(uniform_id, _state.anim_time));
 #endif
 
-            SET_UNIFORM(shader_id, "light_pos",
-                        glUniform3fv(uniform_id, 1, _state.light_pos));
+            SET_UNIFORM(
+                shader_id, "light_pos",
+                glUniform3fv(uniform_id, 1, (const float*)&_state.light_pos));
         });
 
     return res;
