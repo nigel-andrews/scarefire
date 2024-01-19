@@ -9,7 +9,7 @@ layout(location = 0) out vec4 color;
 
 uniform vec3 light_pos;
 
-vec3 object_color = vec3(1.0, 1.0, 1.0);
+vec3 object_color = vec3(0.55, 0.36, 0.05);
 
 void main() {
   vec3 light_dir = normalize(light_pos - gPosition);
