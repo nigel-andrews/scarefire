@@ -11,8 +11,6 @@
         DOGL(uniform_id = glGetUniformLocation(Program, Name));                \
         if (uniform_id != -1)                                                  \
             DOGL(Init);                                                        \
-        else                                                                   \
-            std::cerr << "Trying to bind missing uniform " Name "\n";          \
     } while (0);
 
 struct ShaderConfig

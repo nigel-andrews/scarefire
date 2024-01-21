@@ -11,10 +11,10 @@
 #include <vector>
 
 #include "glm/ext/scalar_constants.hpp"
-#include "src/collection.hh"
-#include "src/mesh.hh"
-#include "src/state.hh"
-#include "src/utils.hh"
+#include "lib/collection.hh"
+#include "lib/mesh.hh"
+#include "lib/state.hh"
+#include "lib/utils.hh"
 
 #define DEBUG
 #undef DEBUG
@@ -87,8 +87,6 @@ void process_standard_keys(unsigned char key, int, int)
         if (key == 'a')
             movement -= camera.right() / delta_time;
 
-        std::cout << movement.x << ' ' << movement.y << std::endl;
-
         float speed = 0.1f;
 
         if (movement.length() > 0.0f)
@@ -98,8 +96,6 @@ void process_standard_keys(unsigned char key, int, int)
 
             camera.set_view(
                 glm::lookAt(new_pos, new_pos + camera.forward(), camera.up()));
-
-            std::cout << "Pos: " << new_pos.x << ' ' << new_pos.y << std::endl;
 
             glutPostRedisplay();
         }
@@ -191,22 +187,24 @@ bool init_glew()
     return true;
 }
 
-void GLAPIENTRY error_callback(GLenum source, GLenum type, GLuint id,
-                               GLenum severity, GLsizei length,
-                               const GLchar* message, const void* userParam)
+__attribute__((unused)) void GLAPIENTRY error_callback(GLenum, GLenum type,
+                                                       GLuint, GLenum severity,
+                                                       GLsizei,
+                                                       const GLchar* message,
+                                                       const void*)
 {
-    auto severity_str = GL_DEBUG_SEVERITY_HIGH ? "HIGH"
-        : GL_DEBUG_SEVERITY_MEDIUM             ? "MEDIUM"
-        : GL_DEBUG_SEVERITY_LOW                ? "LOW"
-                                               : "NOTIF";
+    auto severity_str = severity == GL_DEBUG_SEVERITY_HIGH ? "HIGH"
+        : severity == GL_DEBUG_SEVERITY_MEDIUM             ? "MEDIUM"
+        : severity == GL_DEBUG_SEVERITY_LOW                ? "LOW"
+                                                           : "NOTIF";
 
-    auto type_str = GL_DEBUG_TYPE_ERROR     ? "ERROR"
-        : GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR ? "DEPRECATED"
-        : GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR  ? "UNDEFINED"
-        : GL_DEBUG_TYPE_PORTABILITY         ? "PORTABILITY"
-        : GL_DEBUG_TYPE_PERFORMANCE         ? "PERFORMANCE"
-        : GL_DEBUG_TYPE_MARKER              ? "MARKER"
-                                            : "OTHER";
+    auto type_str = type == GL_DEBUG_TYPE_ERROR     ? "ERROR"
+        : type == GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR ? "DEPRECATED"
+        : type == GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR  ? "UNDEFINED"
+        : type == GL_DEBUG_TYPE_PORTABILITY         ? "PORTABILITY"
+        : type == GL_DEBUG_TYPE_PERFORMANCE         ? "PERFORMANCE"
+        : type == GL_DEBUG_TYPE_MARKER              ? "MARKER"
+                                                    : "OTHER";
 
     fprintf(stderr, "[GL][%s](%s): %s\n", severity_str, type_str, message);
 }

@@ -10,7 +10,7 @@ CC = g++
 
 CPPFLAGS = -Iglm
 
-SRC_DIR = src
+SRC_DIR = src/lib
 OBJ_DIR = build
 
 CPP_FILES = $(wildcard $(SRC_DIR)/*.cpp)
@@ -27,7 +27,7 @@ CXX_FLAGS += -fopt-info-vec-optimized #-fopt-info-vec-missed -ftree-vectorize
 LDXX_FLAGS = -lGL -lGLU  -lGLEW -lglut -lpthread -lstdc++_libbacktrace -fsanitize=address
 #LDXX_FLAGS += /home/jonathan/work/enseignement/matieres/synthese/prog/opengl/compute_shader/jf_gl_tools/dist_lib/libjfglt.a
 
-MAIN_FILE = main.cpp
+MAIN_FILE = src/main.cpp
 DIST = main
 
 SKEL_DIST_DIR = pogl_skel_tp
@@ -71,10 +71,13 @@ post-build:
 
 main-build: pre-build build
 
-build: $(OBJ_FILES)
+build: list $(OBJ_FILES)
 	$(CC) $(CPPFLAGS) $(MAIN_FILE) -o $(DIST) $(OBJ_FILES) $(CXX_FLAGS) $(LDXX_FLAGS)
 
-build/%.o: src/%.cpp src/%.hh
+list:
+	@echo "$(OBJ_FILES)"
+
+$(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp $(SRC_DIR)/%.hh
 	@$(call color,2)
 	@echo "[$@] $(CXX_FLAGS)"
 	@$(call default_color)
